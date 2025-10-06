@@ -65,6 +65,11 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %token <token> IGNORED
 %token <token> UNKNOWN
 
+%token <token> SOURCE CHART FROM SELECT WHERE AS TYPE X Y COLORS COLOR_KW LEGEND HOLE ID_KW ORIENTATION RANGE AVG MIN MAX COUNT SUM
+%token <token> PIE DONUT BAR SCATTER LINE VERTICAL HORIZONTAL TOP BOTTOM LEFT RIGHT
+%token <token> IDENTIFIER STRING NUMBER COLOR
+%token <token> EQ COMMA SEMI COLON LBRACK RBRACK GT LT GE LE EQEQ DOT
+
 /** Non-terminals. */
 %type <constant> constant
 %type <expression> expression
