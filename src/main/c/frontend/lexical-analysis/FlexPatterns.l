@@ -91,9 +91,6 @@ COLOR 				#[0-9a-fA-F]{6}
 
 <<EOF>>								{ return EOFLexemeAction(); }
 
-%%
-
-/*
 "source"        { return KeywordLexemeAction(SOURCE); }
 "chart"         { return KeywordLexemeAction(CHART); }
 "from"          { return KeywordLexemeAction(FROM); }
@@ -133,6 +130,9 @@ COLOR 				#[0-9a-fA-F]{6}
 {NUMBER}        { return NumberLexemeAction(NUMBER); }
 {COLOR}         { return ColorLexemeAction(COLOR); }
 
+">="            { return OperatorLexemeAction(GE); }
+"<="            { return OperatorLexemeAction(LE); }
+"=="            { return OperatorLexemeAction(EQEQ); }
 "="             { return OperatorLexemeAction(EQ); }
 ","             { return PunctuationLexemeAction(COMMA); }
 ";"             { return PunctuationLexemeAction(SEMI); }
@@ -141,11 +141,9 @@ COLOR 				#[0-9a-fA-F]{6}
 "]"             { return PunctuationLexemeAction(RBRACK); }
 ">"             { return OperatorLexemeAction(GT); }
 "<"             { return OperatorLexemeAction(LT); }
-">="            { return OperatorLexemeAction(GE); }
-"<="            { return OperatorLexemeAction(LE); }
-"=="            { return OperatorLexemeAction(EQEQ); }
 "."             { return PunctuationLexemeAction(DOT); }
-*/
+
+%%
 
 /**
  * @see https://westes.github.io/flex/manual/User-Code-Section.html#User-Code-Section

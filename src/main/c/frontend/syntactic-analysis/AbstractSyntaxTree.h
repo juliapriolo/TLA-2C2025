@@ -40,7 +40,10 @@ enum FactorType {
 };
 
 struct Constant {
-	int value;
+	int value;         // Para INTEGER
+	char *color;       // Para COLOR (#xxxxxx)
+	char *string;      // Para STRING
+	double number;     // Para NUMBER
 };
 
 struct Factor {

@@ -28,6 +28,9 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 
 	signed int integer;
 	TokenLabel token;
+	char * stringValue;
+	double numberValue;
+	char * colorValue;
 
 	/** Non-terminals. */
 
@@ -67,7 +70,10 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 
 %token <token> SOURCE CHART FROM SELECT WHERE AS TYPE X Y COLORS COLOR_KW LEGEND HOLE ID_KW ORIENTATION RANGE AVG MIN MAX COUNT SUM
 %token <token> PIE DONUT BAR SCATTER LINE VERTICAL HORIZONTAL TOP BOTTOM LEFT RIGHT
-%token <token> IDENTIFIER STRING NUMBER COLOR
+%token <stringValue> IDENTIFIER
+%token <stringValue> STRING
+%token <numberValue> NUMBER
+%token <colorValue> COLOR
 %token <token> EQ COMMA SEMI COLON LBRACK RBRACK GT LT GE LE EQEQ DOT
 
 /** Non-terminals. */
@@ -103,7 +109,9 @@ factor: OPEN_PARENTHESIS expression CLOSE_PARENTHESIS		{ $$ = ExpressionFactorSe
 	| constant												{ $$ = ConstantFactorSemanticAction($1); }
 	;
 
-constant: INTEGER											{ $$ = IntegerConstantSemanticAction($1); }
-	;
-
+constant: INTEGER                { $$ = IntegerConstantSemanticAction($1); }
+        | COLOR                  { $$ = ColorConstantSemanticAction($1); }
+        | STRING                 { $$ = StringConstantSemanticAction($1); }
+        | NUMBER                 { $$ = NumberConstantSemanticAction($1); }
+        ;
 %%

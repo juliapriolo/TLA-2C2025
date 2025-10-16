@@ -17,6 +17,10 @@ ModuleDestructor initializeBisonActionsModule();
  */
 
 Constant * IntegerConstantSemanticAction(const int value);
+Constant * ColorConstantSemanticAction(char * value);
+Constant * StringConstantSemanticAction(char * value);
+Constant * NumberConstantSemanticAction(double value); 
+
 Expression * ArithmeticExpressionSemanticAction(Expression * leftExpression, Expression * rightExpression, ExpressionType type);
 Expression * FactorExpressionSemanticAction(Factor * factor);
 Factor * ConstantFactorSemanticAction(Constant * constant);
