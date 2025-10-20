@@ -27,4 +27,8 @@ Factor * ConstantFactorSemanticAction(Constant * constant);
 Factor * ExpressionFactorSemanticAction(Expression * expression);
 Program * ExpressionProgramSemanticAction(Expression * expression);
 
+/* Stubs for higher-level language constructs (chart/source) --- implement later */
+Program * SourceProgramSemanticAction(char * sourceId, char * fromId);
+Program * ChartProgramSemanticAction(char * chartId /*, more args */);
+
 #endif

@@ -104,3 +104,22 @@ Program * ExpressionProgramSemanticAction(Expression * expression) {
 	_compilerState->abstractSyntaxtTree = program;
 	return program;
 }
+
+Program * SourceProgramSemanticAction(char * sourceId, char * fromId) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	/* Minimal stub: create an empty Program node (no expression) and attach to compiler state.
+	   Full implementation should create a SourceDecl node and attach it to a statements list. */
+	Program * program = calloc(1, sizeof(Program));
+	program->expression = NULL;
+	_compilerState->abstractSyntaxtTree = program;
+	return program;
+}
+
+Program * ChartProgramSemanticAction(char * chartId) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	/* Minimal stub: create an empty Program node. */
+	Program * program = calloc(1, sizeof(Program));
+	program->expression = NULL;
+	_compilerState->abstractSyntaxtTree = program;
+	return program;
+}

@@ -67,15 +67,26 @@ LexicalAnalyzer * createLexicalAnalyzer() {
 }
 
 Token * createToken(LexicalAnalyzer * lexicalAnalyzer, TokenLabel label) {
-	Token * token = (Token *) calloc(1, sizeof(Token));
-	token->context = flexCurrentContext(lexicalAnalyzer);
-	token->label = label;
-	token->length = yyget_leng(lexicalAnalyzer->scanner);
-	token->lexeme = (char *) calloc(token->length + 1, sizeof(char));
-	token->line = yyget_lineno(lexicalAnalyzer->scanner);
-	token->semanticValue = (SemanticValue *) calloc(1, sizeof(SemanticValue));
-	strncpy(token->lexeme, yyget_text(lexicalAnalyzer->scanner), token->length);
-	return token;
+    Token * t = (Token *) malloc(sizeof(Token));
+    if (!t) return NULL;
+
+    /* Inicializar campos mínimos (lexeme normalmente lo rellena flex internamente) */
+    t->lexeme = NULL;                 /* será establecida por quien cree el token o por flex wrapper */
+    t->context = 0;
+    t->label = label;
+    t->length = 0;
+    t->line = 0;
+
+    /* Crear y zero-fill la SemanticValue */
+    t->semanticValue = (SemanticValue *) malloc(sizeof(SemanticValue));
+    if (t->semanticValue == NULL) {
+        free(t);
+        return NULL;
+    }
+    /* Inicializar a cero para evitar basura */
+    memset(t->semanticValue, 0, sizeof(SemanticValue));
+
+    return t;
 }
 
 FlexContext currentLexicalAnalyzerContext(LexicalAnalyzer * lexicalAnalyzer) {
@@ -127,18 +138,27 @@ void destroyLexicalAnalyzer(LexicalAnalyzer * lexicalAnalyzer) {
 	}
 }
 
-void destroyToken(Token * token) {
-	if (token != NULL) {
-		if (token->lexeme != NULL) {
-			free(token->lexeme);
-			token->lexeme = NULL;
-		}
-		if (token->semanticValue != NULL) {
-			free(token->semanticValue);
-			token->semanticValue = NULL;
-		}
-		free(token);
-	}
+void destroyToken(Token * t) {
+    if (!t) return;
+
+    /* Si semanticValue guarda strings, liberarlas */
+    if (t->semanticValue != NULL) {
+        /* Si semanticValue->string fue asignada por nosotros, la liberamos */
+        if (t->semanticValue->string != NULL) {
+            free(t->semanticValue->string);
+            t->semanticValue->string = NULL;
+        }
+        free(t->semanticValue);
+        t->semanticValue = NULL;
+    }
+
+    /* liberamos lexeme si createToken lo duplicó (patch según tu implementación) */
+    if (t->lexeme != NULL) {
+        free(t->lexeme);
+        t->lexeme = NULL;
+    }
+
+    free(t);
 }
 
 void enterLexicalAnalyzerContext(LexicalAnalyzer * lexicalAnalyzer, FlexContext flexContext) {

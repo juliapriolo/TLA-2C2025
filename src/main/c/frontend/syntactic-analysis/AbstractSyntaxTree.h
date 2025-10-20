@@ -78,4 +78,18 @@ void destroyExpression(Expression * expression);
 void destroyFactor(Factor * factor);
 void destroyProgram(Program * program);
 
+/* Constructors */
+Constant * createIntegerConstant(int value);
+Constant * createColorConstant(char * color);
+Constant * createStringConstant(char * string);
+Constant * createNumberConstant(double number);
+
+Factor * createConstantFactor(Constant * constant);
+Factor * createExpressionFactor(Expression * expression);
+
+Expression * createArithmeticExpression(Expression * left, Expression * right, ExpressionType type);
+Expression * createFactorExpression(Factor * factor);
+
+Program * createProgramFromExpression(Expression * expression);
+
 #endif

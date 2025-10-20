@@ -9,6 +9,7 @@
  * The unit of information to transfer between a lexical-analyzer and a
  * syntactic-analyzer.
  */
+
 typedef struct {
 	char * lexeme;
 	FlexContext context;

@@ -9,10 +9,7 @@
 }
 
 %{
-
-/**
- * @see https://westes.github.io/flex/manual/Definitions-Section.html#Definitions-Section
- */
+/* === Declaraciones de funciones externas === */
 
 extern CompilationStatus ArithmeticOperatorLexemeAction(TokenLabel label);
 extern CompilationStatus EnterImportExpressionLexemeAction(FlexContext context);
@@ -36,33 +33,33 @@ extern CompilationStatus IdentifierLexemeAction(TokenLabel label);
 
 %}
 
-/**
- * Flex contexts (a.k.a. start conditions).
- *
- * @see https://westes.github.io/flex/manual/Start-Conditions.html
- */
+/* === Opciones generales === */
+%option noyywrap
+%option nounput
+%option noinput
+%option caseless
+
+/* === Contextos === */
+
 %x IMPORT_EXPRESSION
 %x MULTILINE_COMMENT
 
-/**
- * Reusable patterns.
- *
- * @see https://westes.github.io/flex/manual/Matching.html
- * @see https://westes.github.io/flex/manual/Patterns.html
- */
-whitespace			[[:space:]]+
-IDENTIFIER 			[a-zA-Z_][a-zA-Z0-9_]*
-STRING 				\"[^\"]*\"
-NUMBER 				[0-9]+\.[0-9]+
-COLOR 				#[0-9a-fA-F]{6}
+/* === Patrones reutilizables === */
+
+whitespace          [[:space:]]+
+IDENTIFIER_PATTERN  [a-zA-Z_][a-zA-Z0-9_]*
+STRING_PATTERN      \"[^\"]*\"
+NUMBER_PATTERN      [0-9]+\.[0-9]+
+INTEGER_PATTERN     [0-9]+
+COLOR_PATTERN       #[0-9a-fA-F]{6}
 
 %%
 
 %{
 
-/**
- * @see https://westes.github.io/flex/manual/Rules-Section.html#Rules-Section
- */
+/* ===========================================================
+   BLOQUES ESPECIALES (IMPORT / COMENTARIOS)
+   =========================================================== */
 
 %}
 
@@ -76,37 +73,27 @@ COLOR 				#[0-9a-fA-F]{6}
 <MULTILINE_COMMENT>[^*]+			{ return IgnoredLexemeAction(); }
 <MULTILINE_COMMENT>.				{ return IgnoredLexemeAction(); }
 
-"-"									{ return ArithmeticOperatorLexemeAction(SUB); }
-"*"									{ return ArithmeticOperatorLexemeAction(MUL); }
-"/"									{ return ArithmeticOperatorLexemeAction(DIV); }
-"+"									{ return ArithmeticOperatorLexemeAction(ADD); }
-
-"("									{ return ParenthesisLexemeAction(OPEN_PARENTHESIS); }
-")"									{ return ParenthesisLexemeAction(CLOSE_PARENTHESIS); }
-
-[[:digit:]]+						{ return IntegerLexemeAction(); }
-
-{whitespace}						{ return IgnoredLexemeAction(); }
-.									{ return UnknownLexemeAction(); }
-
-<<EOF>>								{ return EOFLexemeAction(); }
+/* ===========================================================
+   PALABRAS CLAVE
+   =========================================================== */
 
 "source"        { return KeywordLexemeAction(SOURCE); }
 "chart"         { return KeywordLexemeAction(CHART); }
 "from"          { return KeywordLexemeAction(FROM); }
-"select"        { return KeywordLexemeAction(SELECT); }
-"where"         { return KeywordLexemeAction(WHERE); }
+"filter"        { return KeywordLexemeAction(FILTER); }
+"project"       { return KeywordLexemeAction(PROJECT); }
+"aggregate"     { return KeywordLexemeAction(AGGREGATE); }
 "as"            { return KeywordLexemeAction(AS); }
 "type"          { return KeywordLexemeAction(TYPE); }
 "x"             { return KeywordLexemeAction(X); }
 "y"             { return KeywordLexemeAction(Y); }
 "colors"        { return KeywordLexemeAction(COLORS); }
-"color"         { return KeywordLexemeAction(COLOR_KW); }
 "legend"        { return KeywordLexemeAction(LEGEND); }
 "hole"          { return KeywordLexemeAction(HOLE); }
 "id"            { return KeywordLexemeAction(ID_KW); }
 "orientation"   { return KeywordLexemeAction(ORIENTATION); }
 "range"         { return KeywordLexemeAction(RANGE); }
+
 "avg"           { return KeywordLexemeAction(AVG); }
 "min"           { return KeywordLexemeAction(MIN); }
 "max"           { return KeywordLexemeAction(MAX); }
@@ -118,6 +105,7 @@ COLOR 				#[0-9a-fA-F]{6}
 "bar"           { return KeywordLexemeAction(BAR); }
 "scatter"       { return KeywordLexemeAction(SCATTER); }
 "line"          { return KeywordLexemeAction(LINE); }
+
 "vertical"      { return KeywordLexemeAction(VERTICAL); }
 "horizontal"    { return KeywordLexemeAction(HORIZONTAL); }
 "top"           { return KeywordLexemeAction(TOP); }
@@ -125,23 +113,54 @@ COLOR 				#[0-9a-fA-F]{6}
 "left"          { return KeywordLexemeAction(LEFT); }
 "right"         { return KeywordLexemeAction(RIGHT); }
 
-{IDENTIFIER}    { return IdentifierLexemeAction(IDENTIFIER); }
-{STRING}        { return StringLexemeAction(STRING); }
-{NUMBER}        { return NumberLexemeAction(NUMBER); }
-{COLOR}         { return ColorLexemeAction(COLOR); }
+/* ===========================================================
+   OPERADORES Y PUNTUACIÓN
+   =========================================================== */
 
 ">="            { return OperatorLexemeAction(GE); }
 "<="            { return OperatorLexemeAction(LE); }
 "=="            { return OperatorLexemeAction(EQEQ); }
 "="             { return OperatorLexemeAction(EQ); }
+">"             { return OperatorLexemeAction(GT); }
+"<"             { return OperatorLexemeAction(LT); }
+"+"             { return ArithmeticOperatorLexemeAction(ADD); }
+"-"             { return ArithmeticOperatorLexemeAction(SUB); }
+"*"             { return ArithmeticOperatorLexemeAction(MUL); }
+"/"             { return ArithmeticOperatorLexemeAction(DIV); }
+
 ","             { return PunctuationLexemeAction(COMMA); }
 ";"             { return PunctuationLexemeAction(SEMI); }
 ":"             { return PunctuationLexemeAction(COLON); }
+"."             { return PunctuationLexemeAction(DOT); }
 "["             { return PunctuationLexemeAction(LBRACK); }
 "]"             { return PunctuationLexemeAction(RBRACK); }
-">"             { return OperatorLexemeAction(GT); }
-"<"             { return OperatorLexemeAction(LT); }
-"."             { return PunctuationLexemeAction(DOT); }
+"("             { return ParenthesisLexemeAction(OPEN_PARENTHESIS); }
+")"             { return ParenthesisLexemeAction(CLOSE_PARENTHESIS); }
+
+/* ===========================================================
+   LITERALES (STRING, NUMBER, COLOR)
+=========================================================== */
+
+{STRING_PATTERN}    { yylval.stringValue = strndup(yytext + 1, yyleng - 2); return StringLexemeAction(STRING); }
+{NUMBER_PATTERN}    { yylval.numberValue = atof(yytext); return NumberLexemeAction(NUMBER); }
+{INTEGER_PATTERN}   { yylval.integer = atoi(yytext); return IntegerLexemeAction(); }
+{COLOR_PATTERN}     { yylval.colorValue = strdup(yytext); return ColorLexemeAction(COLOR); }
+
+/* ===========================================================
+   IDENTIFICADORES
+   =========================================================== */
+{IDENTIFIER_PATTERN}    { yylval.stringValue = strdup(yytext); return IdentifierLexemeAction(IDENTIFIER); }
+
+/* ===========================================================
+   ESPACIOS EN BLANCO
+   =========================================================== */
+{whitespace}        { return IgnoredLexemeAction(); }
+
+/* ===========================================================
+   FIN DE ARCHIVO Y DESCONOCIDOS
+   =========================================================== */
+<<EOF>>             { return EOFLexemeAction(); }
+.                   { return UnknownLexemeAction(); }
 
 %%
 
