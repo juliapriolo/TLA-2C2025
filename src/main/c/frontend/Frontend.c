@@ -1,4 +1,6 @@
 #include "Frontend.h"
+#include "lexical-analysis/FlexScanner.h"
+#include "syntactic-analysis/BisonParser.h"
 
 /* MODULE INTERNAL STATE */
 
@@ -166,8 +168,9 @@ void enterLexicalAnalyzerContext(LexicalAnalyzer * lexicalAnalyzer, FlexContext 
 }
 
 CompilationStatus executeLexicalAnalysis(LexicalAnalyzer * lexicalAnalyzer) {
+	YYSTYPE yylval;
 	return (CompilationStatus) yylex(
-		NULL,
+		&yylval,
 		(YYLTYPE *) lexicalAnalyzer->location,
 		lexicalAnalyzer->scanner);
 }
@@ -200,6 +203,6 @@ CompilationStatus pushToken(LexicalAnalyzer * lexicalAnalyzer, Token * token) {
 	return (CompilationStatus) yypush_parse(
 		(yypstate *) lexicalAnalyzer->parser,
 		token->label,
-		token->semanticValue,
+		(const YYSTYPE *) token->semanticValue,
 		(YYLTYPE *) lexicalAnalyzer->location);
 }

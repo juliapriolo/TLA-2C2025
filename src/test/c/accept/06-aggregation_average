@@ -1,0 +1,7 @@
+chart "Promedio de ventas por mes" type line:
+  from "ventas.csv",
+  x = "Mes",
+  y = average("Monto"),
+  colors = [#2980B9],
+  id = "grafico_promedio";
+

@@ -1,0 +1,7 @@
+chart "Filtro mal formado" type bar:
+  from "datos.csv",
+  x = "Columna",
+  y = "Valor",
+  filter "Columna" ==,
+  id = "error";
+

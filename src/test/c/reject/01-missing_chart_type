@@ -1,0 +1,6 @@
+chart "Sin tipo" :
+  from "datos.csv",
+  x = "Columna",
+  y = "Valor",
+  id = "error";
+

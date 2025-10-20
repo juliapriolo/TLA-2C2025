@@ -1,0 +1,14 @@
+source base = from "ventas.csv"
+    filter "Año" == 2024;
+
+source mayores_a_1000 = from base
+    filter "Monto" > 1000
+    project ["Mes", "Monto"];
+
+chart "Ventas mayores a 1000" type bar:
+  from mayores_a_1000,
+  x = "Mes",
+  y = "Monto",
+  colors = [#9B59B6],
+  id = "grafico_filtrado";
+

@@ -1,0 +1,6 @@
+chart "Tipo no soportado" type invalid:
+  from "datos.csv",
+  x = "Columna",
+  y = "Valor",
+  id = "error";
+

@@ -1,0 +1,1 @@
+chart "test" type bar: from "data.csv", x = "col", y = "val", id = "test";

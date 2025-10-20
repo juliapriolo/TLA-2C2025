@@ -73,9 +73,9 @@ COLOR_PATTERN       #[0-9a-fA-F]{6}
 <MULTILINE_COMMENT>[^*]+			{ return IgnoredLexemeAction(); }
 <MULTILINE_COMMENT>.				{ return IgnoredLexemeAction(); }
 
-/* ===========================================================
-   PALABRAS CLAVE
-   =========================================================== */
+
+
+
 
 "source"        { return KeywordLexemeAction(SOURCE); }
 "chart"         { return KeywordLexemeAction(CHART); }
@@ -95,6 +95,7 @@ COLOR_PATTERN       #[0-9a-fA-F]{6}
 "range"         { return KeywordLexemeAction(RANGE); }
 
 "avg"           { return KeywordLexemeAction(AVG); }
+"average"       { return KeywordLexemeAction(AVERAGE); }
 "min"           { return KeywordLexemeAction(MIN); }
 "max"           { return KeywordLexemeAction(MAX); }
 "count"         { return KeywordLexemeAction(COUNT); }
@@ -112,10 +113,12 @@ COLOR_PATTERN       #[0-9a-fA-F]{6}
 "bottom"        { return KeywordLexemeAction(BOTTOM); }
 "left"          { return KeywordLexemeAction(LEFT); }
 "right"         { return KeywordLexemeAction(RIGHT); }
+"off"           { return KeywordLexemeAction(OFF); }
 
-/* ===========================================================
-   OPERADORES Y PUNTUACIÓN
-   =========================================================== */
+
+
+
+
 
 ">="            { return OperatorLexemeAction(GE); }
 "<="            { return OperatorLexemeAction(LE); }
@@ -137,28 +140,32 @@ COLOR_PATTERN       #[0-9a-fA-F]{6}
 "("             { return ParenthesisLexemeAction(OPEN_PARENTHESIS); }
 ")"             { return ParenthesisLexemeAction(CLOSE_PARENTHESIS); }
 
-/* ===========================================================
-   LITERALES (STRING, NUMBER, COLOR)
-=========================================================== */
 
-{STRING_PATTERN}    { yylval.stringValue = strndup(yytext + 1, yyleng - 2); return StringLexemeAction(STRING); }
-{NUMBER_PATTERN}    { yylval.numberValue = atof(yytext); return NumberLexemeAction(NUMBER); }
-{INTEGER_PATTERN}   { yylval.integer = atoi(yytext); return IntegerLexemeAction(); }
-{COLOR_PATTERN}     { yylval.colorValue = strdup(yytext); return ColorLexemeAction(COLOR); }
 
-/* ===========================================================
-   IDENTIFICADORES
-   =========================================================== */
-{IDENTIFIER_PATTERN}    { yylval.stringValue = strdup(yytext); return IdentifierLexemeAction(IDENTIFIER); }
 
-/* ===========================================================
-   ESPACIOS EN BLANCO
-   =========================================================== */
+
+
+{STRING_PATTERN}    { yylval->stringValue = strndup(yytext + 1, yyleng - 2); return StringLexemeAction(STRING); }
+{NUMBER_PATTERN}    { yylval->numberValue = atof(yytext); return NumberLexemeAction(NUMBER); }
+{INTEGER_PATTERN}   { yylval->integer = atoi(yytext); return IntegerLexemeAction(); }
+{COLOR_PATTERN}     { yylval->colorValue = strdup(yytext); return ColorLexemeAction(COLOR); }
+
+
+
+
+
+{IDENTIFIER_PATTERN}    { yylval->stringValue = strdup(yytext); return IdentifierLexemeAction(IDENTIFIER); }
+
+
+
+
+
 {whitespace}        { return IgnoredLexemeAction(); }
 
-/* ===========================================================
-   FIN DE ARCHIVO Y DESCONOCIDOS
-   =========================================================== */
+
+
+
+
 <<EOF>>             { return EOFLexemeAction(); }
 .                   { return UnknownLexemeAction(); }
 

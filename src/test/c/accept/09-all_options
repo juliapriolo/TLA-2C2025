@@ -1,0 +1,10 @@
+chart "Gráfico con todas las opciones" type bar:
+  from "datos.csv",
+  x = "Categoria",
+  y = "Valor",
+  orientation = horizontal,
+  colors = [#FF5733, #33FF57, #3357FF],
+  legend = top,
+  hole = 0.1,
+  id = "grafico_completo";
+

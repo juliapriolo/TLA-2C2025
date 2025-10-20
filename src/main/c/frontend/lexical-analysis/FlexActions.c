@@ -8,7 +8,7 @@ static InputBuffer * _inputBuffer = NULL;
 static LexicalAnalyzer * _lexicalAnalyzer = NULL;
 static Logger * _logger = NULL;
 
-/** Shutdown module's internal state. */
+/** limpia y libera recursos del módulo (logger, input buffer) */
 void _shutdownFlexActionsModule() {
 	if (_logger != NULL) {
 		logDebugging(_logger, "Destroying module: FlexActions...");
@@ -22,6 +22,8 @@ void _shutdownFlexActionsModule() {
 	_lexicalAnalyzer = NULL;
 }
 
+
+/* inicializa el modulo gy devuelve la funcion destructora (la de arriba)*/
 ModuleDestructor initializeFlexActionsModule(LexicalAnalyzer * lexicalAnalyzer) {
 	if (lexicalAnalyzer == NULL) {
         /* No tiene sentido inicializar sin el analizador léxico. */
@@ -45,6 +47,7 @@ static void _logTokenAction(const char * actionName, Token * token);
 /**
  * Logs a lexical-analyzer action over a token in DEBUGGING level.
  */
+ /* imprime en el log info del token */
 static void _logTokenAction(const char * actionName, Token * token) {
     if (_logger == NULL) {
         /* Nothing to log to; avoid crash. */
@@ -96,6 +99,7 @@ static Token * _safeCreateToken(TokenLabel label) {
     return t;
 }
 
+
 /* Helper: extract string without quotes if present */
 static char * _unquote_string(const char * s) {
     if (s == NULL) return NULL;
@@ -113,6 +117,9 @@ static char * _unquote_string(const char * s) {
 
 
 /* PUBLIC FUNCTIONS */
+/* cada una crea un token con la etiqueta LABEL correspondiente
+ (ADD, SOURCE, GE, COMMA, etc)
+*/
 
 CompilationStatus ArithmeticOperatorLexemeAction(TokenLabel label) {
     Token * token = _safeCreateToken(label);
@@ -236,6 +243,8 @@ CompilationStatus IdentifierLexemeAction(TokenLabel label) {
     return status;
 }
 
+
+/* cambian el modo del scanner al contexto solicitado (coment o import_expresion)*/
 CompilationStatus EnterImportExpressionLexemeAction(FlexContext context) {
     if (_logIgnoredLexemes && _logger) {
         Token * token = _safeCreateToken(OPEN_BRACE);

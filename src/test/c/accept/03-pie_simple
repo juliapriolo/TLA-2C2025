@@ -1,0 +1,7 @@
+chart "Tartas 2025" type pie:
+  from "tartas_2025.csv",
+  x = "Tipo de tartas",
+  y = "Cantidad",
+  legend = bottom,
+  id = "tipo_tartas";
+

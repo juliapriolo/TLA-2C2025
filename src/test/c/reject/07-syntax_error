@@ -1,0 +1,6 @@
+chart "Sintaxis incorrecta" type bar
+  from "datos.csv",
+  x = "Columna",
+  y = "Valor",
+  id = "error";
+

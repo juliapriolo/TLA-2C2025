@@ -1,0 +1,4 @@
+chart "Sin Y" type bar:
+  from "datos.csv",
+  x = "Columna",
+  id = "error";

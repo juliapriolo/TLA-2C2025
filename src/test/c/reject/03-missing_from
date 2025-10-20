@@ -1,0 +1,5 @@
+chart "Sin FROM" type bar:
+  x = "Columna",
+  y = "Valor",
+  id = "error";
+

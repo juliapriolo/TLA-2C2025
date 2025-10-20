@@ -1,0 +1,10 @@
+source ventas_norte = from "ventas_norte.csv" project ["Mes", "Monto"];
+source ventas_sur = from "ventas_sur.csv" project ["Mes", "Monto"];
+
+chart "Comparación de ventas por región" type line:
+  from [ventas_norte, ventas_sur],
+  x = "Mes",
+  y = "Monto",
+  colors = [#E74C3C, #2ECC71],
+  id = "grafico_series";
+

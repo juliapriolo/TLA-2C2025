@@ -1,0 +1,11 @@
+source datos_filtrados = from "personas.csv"
+    filter "Edad" > 18
+    project ["Edad", "Altura", "Peso"];
+
+chart "BMI Promedio" type line:
+  from datos_filtrados,
+  x = "Edad",
+  y = "Peso"/("Altura"*"Altura") as "BMI",
+  colors = [#8E44AD],
+  id = "grafico_bmi";
+

@@ -1,0 +1,7 @@
+chart "Operaciones matemáticas" type line:
+  from "datos.csv",
+  x = "Tiempo",
+  y = "Peso"/1000 as "Peso en kg",
+  colors = [#FF0000],
+  id = "operaciones";
+

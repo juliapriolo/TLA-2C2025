@@ -1,0 +1,7 @@
+source datos = from "archivo.csv"
+    filter "Columna" == "Valor"
+    project ["Col1", "Col2"];
+
+source datos = from "otro.csv"
+    filter "Otra" > 10;
+
