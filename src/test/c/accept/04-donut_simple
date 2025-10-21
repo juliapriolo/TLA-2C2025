@@ -1,7 +1,7 @@
 chart "Distribución de gastos mensuales" type donut:
   from "gastosmensuales.csv",
-  x = "Gastos",
-  y = "Porcentaje",
+  x = Gastos,
+  y = Porcentaje,
   hole = 0.2,
-  id = "grafico_donut";
+  id = grafico_donut;
 

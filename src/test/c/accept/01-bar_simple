@@ -1,7 +1,7 @@
 chart "Ventas 2024" type bar:
   from "ventas.csv",
-  x = "Mes",
-  y = "Monto",
+  x = Mes,
+  y = Monto,
   orientation = vertical,
   colors = [#4CAF50, #2196F3],
-  id = "grafico_ventas";
+  id = grafico_ventas;
