@@ -92,6 +92,14 @@ Program * createProgramFromExpression(Expression * expression) {
 void destroyConstant(Constant * constant) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (constant != NULL) {
+		if (constant->string != NULL) {
+			free(constant->string);
+			constant->string = NULL;
+		}
+		if (constant->color != NULL) {
+			free(constant->color);
+			constant->color = NULL;
+		}
 		free(constant);
 	}
 }

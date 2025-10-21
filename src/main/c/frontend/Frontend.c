@@ -1,6 +1,7 @@
 #include "Frontend.h"
 #include "lexical-analysis/FlexScanner.h"
 #include "syntactic-analysis/BisonParser.h"
+#include "syntactic-analysis/BisonActions.h"
 
 /* MODULE INTERNAL STATE */
 
@@ -143,13 +144,9 @@ void destroyLexicalAnalyzer(LexicalAnalyzer * lexicalAnalyzer) {
 void destroyToken(Token * t) {
     if (!t) return;
 
-    /* Si semanticValue guarda strings, liberarlas */
+    /* No liberar aquí el contenido de semanticValue (e.g., strings):
+       el parser/AST asume ownership y lo libera al destruir el AST. */
     if (t->semanticValue != NULL) {
-        /* Si semanticValue->string fue asignada por nosotros, la liberamos */
-        if (t->semanticValue->string != NULL) {
-            free(t->semanticValue->string);
-            t->semanticValue->string = NULL;
-        }
         free(t->semanticValue);
         t->semanticValue = NULL;
     }
@@ -180,6 +177,9 @@ CompilationStatus executeSyntacticAnalysis() {
 	CompilationStatus status = IN_PROGRESS;
 	while (status == IN_PROGRESS) {
 		status = executeLexicalAnalysis(_lexicalAnalyzer);
+	}
+	if (status == SUCCEEDED && bisonHasSemanticErrors()) {
+		status = FAILED;
 	}
 	logDebugging(_logger, "Compilation status: %s.", _compilationStatusAsString(status));
 	logDebugging(_logger, "Parsing is done.");

@@ -1,9 +1,60 @@
 #include "BisonActions.h"
+#include <string.h>
 
 /* MODULE INTERNAL STATE */
 
 static CompilerState * _compilerState = NULL;
 static Logger * _logger = NULL;
+static bool _semanticErrorDetected = false;
+static char ** _sourceIdentifiers = NULL;
+static size_t _sourceIdentifiersCount = 0;
+
+static void _clearSourceIdentifiers(void) {
+	if (_sourceIdentifiers != NULL) {
+		for (size_t i = 0; i < _sourceIdentifiersCount; ++i) {
+			free(_sourceIdentifiers[i]);
+		}
+		free(_sourceIdentifiers);
+		_sourceIdentifiers = NULL;
+	}
+	_sourceIdentifiersCount = 0;
+}
+
+static bool _sourceIdentifierExists(const char * identifier) {
+	if (identifier == NULL) {
+		return false;
+	}
+	for (size_t i = 0; i < _sourceIdentifiersCount; ++i) {
+		if (_sourceIdentifiers[i] != NULL && strcmp(_sourceIdentifiers[i], identifier) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static void _rememberSourceIdentifier(const char * identifier) {
+	if (identifier == NULL) {
+		return;
+	}
+	char * duplicated = strdup(identifier);
+	if (duplicated == NULL) {
+		if (_logger) {
+			logError(_logger, "Out of memory while tracking source identifier \"%s\".", identifier);
+		}
+		return;
+	}
+	char ** resized = (char **) realloc(_sourceIdentifiers, sizeof(char *) * (_sourceIdentifiersCount + 1));
+	if (resized == NULL) {
+		if (_logger) {
+			logError(_logger, "Out of memory while registering source identifier \"%s\".", identifier);
+		}
+		free(duplicated);
+		return;
+	}
+	_sourceIdentifiers = resized;
+	_sourceIdentifiers[_sourceIdentifiersCount] = duplicated;
+	++_sourceIdentifiersCount;
+}
 
 /** Shutdown module's internal state. */
 void _shutdownBisonActionsModule() {
@@ -12,12 +63,16 @@ void _shutdownBisonActionsModule() {
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
+	_clearSourceIdentifiers();
+	_semanticErrorDetected = false;
 	_compilerState = NULL;
 }
 
 ModuleDestructor initializeBisonActionsModule(CompilerState * compilerState) {
 	_compilerState = compilerState;
 	_logger = createLogger("BisonActions");
+	_clearSourceIdentifiers();
+	_semanticErrorDetected = false;
 	return _shutdownBisonActionsModule;
 }
 
@@ -107,6 +162,20 @@ Program * ExpressionProgramSemanticAction(Expression * expression) {
 
 Program * SourceProgramSemanticAction(char * sourceId, char * fromId) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
+	if (sourceId != NULL) {
+		if (_sourceIdentifierExists(sourceId)) {
+			_semanticErrorDetected = true;
+			if (_logger) {
+				logError(_logger, "Duplicate source identifier \"%s\".", sourceId);
+			}
+		} else {
+			_rememberSourceIdentifier(sourceId);
+		}
+		free(sourceId);
+	}
+	if (fromId != NULL) {
+		free(fromId);
+	}
 	/* Minimal stub: create an empty Program node (no expression) and attach to compiler state.
 	   Full implementation should create a SourceDecl node and attach it to a statements list. */
 	Program * program = calloc(1, sizeof(Program));
@@ -121,5 +190,12 @@ Program * ChartProgramSemanticAction(char * chartId) {
 	Program * program = calloc(1, sizeof(Program));
 	program->expression = NULL;
 	_compilerState->abstractSyntaxtTree = program;
+	if (chartId != NULL) {
+		free(chartId);
+	}
 	return program;
+}
+
+bool bisonHasSemanticErrors(void) {
+	return _semanticErrorDetected;
 }

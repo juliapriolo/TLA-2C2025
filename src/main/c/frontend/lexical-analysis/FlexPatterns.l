@@ -88,6 +88,7 @@ COLOR_PATTERN       #[0-9a-fA-F]{6}
 "x"             { return KeywordLexemeAction(X); }
 "y"             { return KeywordLexemeAction(Y); }
 "colors"        { return KeywordLexemeAction(COLORS); }
+"color"         { return KeywordLexemeAction(COLOR_KW); }
 "legend"        { return KeywordLexemeAction(LEGEND); }
 "hole"          { return KeywordLexemeAction(HOLE); }
 "id"            { return KeywordLexemeAction(ID_KW); }
@@ -145,16 +146,16 @@ COLOR_PATTERN       #[0-9a-fA-F]{6}
 
 
 
-{STRING_PATTERN}    { yylval->stringValue = strndup(yytext + 1, yyleng - 2); return StringLexemeAction(STRING); }
-{NUMBER_PATTERN}    { yylval->numberValue = atof(yytext); return NumberLexemeAction(NUMBER); }
-{INTEGER_PATTERN}   { yylval->integer = atoi(yytext); return IntegerLexemeAction(); }
-{COLOR_PATTERN}     { yylval->colorValue = strdup(yytext); return ColorLexemeAction(COLOR); }
+{STRING_PATTERN}    { return StringLexemeAction(STRING); }
+{NUMBER_PATTERN}    { return NumberLexemeAction(NUMBER); }
+{INTEGER_PATTERN}   { return IntegerLexemeAction(); }
+{COLOR_PATTERN}     { return ColorLexemeAction(COLOR); }
 
 
 
 
 
-{IDENTIFIER_PATTERN}    { yylval->stringValue = strdup(yytext); return IdentifierLexemeAction(IDENTIFIER); }
+{IDENTIFIER_PATTERN}    { return IdentifierLexemeAction(IDENTIFIER); }
 
 
 

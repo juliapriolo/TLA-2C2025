@@ -32,6 +32,8 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %destructor { destroyConstant($$); } <constant>
 %destructor { destroyExpression($$); } <expression>
 %destructor { destroyFactor($$); } <factor>
+%destructor { free($$); } <stringValue>
+%destructor { free($$); } <colorValue>
 
 %token <integer> INTEGER
 %token <token> ADD SUB MUL DIV OPEN_PARENTHESIS CLOSE_PARENTHESIS OPEN_BRACE CLOSE_BRACE OPEN_COMMENT CLOSE_COMMENT
@@ -54,8 +56,11 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %type <factor> factor
 %type <program> program
 %type <program> stmt stmt_list
-%type <stringValue> source_decl chart_decl chart_body chart_option string_list color_list
-%type <token> filter_clause project_clause chart_type orientation legend_position aggregate_function
+%type <stringValue> source_decl chart_decl
+%type <stringValue> string_list string_or_identifier from_source
+%type <colorValue> color_list
+%type <token> chart_body filter_clause project_clause chart_type orientation legend_position aggregate_function
+%type <token> required_from required_x required_y optional_options optional_option opt_comma opt_semi range_values number_literal orientation_option colors_option color_option legend_option hole_option id_option range_option x_range_option y_range_option
 
 %%
 
@@ -63,7 +68,7 @@ program: stmt_list
        ;
 
 stmt_list: /* empty */                     { $$ = NULL; }
-         | stmt_list stmt                   { $$ = $2; }
+         | stmt_list stmt                   { destroyProgram($1); $$ = $2; }
          ;
 
 stmt: source_decl                      { $$ = SourceProgramSemanticAction($1, NULL); }
@@ -82,44 +87,117 @@ source_decl: SOURCE IDENTIFIER EQ FROM STRING SEMI { $$ = $2; }
            | SOURCE IDENTIFIER EQ FROM IDENTIFIER project_clause filter_clause SEMI { $$ = $2; }
            ;
 
-filter_clause: FILTER STRING EQEQ STRING    { $$ = FILTER; }
-             | FILTER STRING GT STRING       { $$ = FILTER; }
-             | FILTER STRING LT STRING       { $$ = FILTER; }
-             | FILTER STRING GE STRING       { $$ = FILTER; }
-             | FILTER STRING LE STRING       { $$ = FILTER; }
-             | FILTER STRING GT INTEGER      { $$ = FILTER; }
-             | FILTER STRING LT INTEGER      { $$ = FILTER; }
-             | FILTER STRING GE INTEGER      { $$ = FILTER; }
-             | FILTER STRING LE INTEGER      { $$ = FILTER; }
-             | FILTER STRING EQEQ INTEGER    { $$ = FILTER; }
-             | FILTER IDENTIFIER EQEQ STRING { $$ = FILTER; }
-             | FILTER IDENTIFIER GT STRING   { $$ = FILTER; }
-             | FILTER IDENTIFIER LT STRING   { $$ = FILTER; }
-             | FILTER IDENTIFIER GE STRING    { $$ = FILTER; }
-             | FILTER IDENTIFIER LE STRING   { $$ = FILTER; }
-             | FILTER IDENTIFIER GT INTEGER  { $$ = FILTER; }
-             | FILTER IDENTIFIER LT INTEGER  { $$ = FILTER; }
-             | FILTER IDENTIFIER GE INTEGER  { $$ = FILTER; }
-             | FILTER IDENTIFIER LE INTEGER  { $$ = FILTER; }
-             | FILTER IDENTIFIER EQEQ INTEGER { $$ = FILTER; }
+filter_clause: FILTER STRING EQEQ STRING    { free($2); free($4); $$ = FILTER; }
+             | FILTER STRING GT STRING       { free($2); free($4); $$ = FILTER; }
+             | FILTER STRING LT STRING       { free($2); free($4); $$ = FILTER; }
+             | FILTER STRING GE STRING       { free($2); free($4); $$ = FILTER; }
+             | FILTER STRING LE STRING       { free($2); free($4); $$ = FILTER; }
+             | FILTER STRING GT INTEGER      { free($2); $$ = FILTER; }
+             | FILTER STRING LT INTEGER      { free($2); $$ = FILTER; }
+             | FILTER STRING GE INTEGER      { free($2); $$ = FILTER; }
+             | FILTER STRING LE INTEGER      { free($2); $$ = FILTER; }
+             | FILTER STRING EQEQ INTEGER    { free($2); $$ = FILTER; }
+             | FILTER IDENTIFIER EQEQ STRING { free($2); free($4); $$ = FILTER; }
+             | FILTER IDENTIFIER GT STRING   { free($2); free($4); $$ = FILTER; }
+             | FILTER IDENTIFIER LT STRING   { free($2); free($4); $$ = FILTER; }
+             | FILTER IDENTIFIER GE STRING   { free($2); free($4); $$ = FILTER; }
+             | FILTER IDENTIFIER LE STRING   { free($2); free($4); $$ = FILTER; }
+             | FILTER IDENTIFIER GT INTEGER  { free($2); $$ = FILTER; }
+             | FILTER IDENTIFIER LT INTEGER  { free($2); $$ = FILTER; }
+             | FILTER IDENTIFIER GE INTEGER  { free($2); $$ = FILTER; }
+             | FILTER IDENTIFIER LE INTEGER  { free($2); $$ = FILTER; }
+             | FILTER IDENTIFIER EQEQ INTEGER { free($2); $$ = FILTER; }
              ;
 
 project_clause: PROJECT LBRACK string_list RBRACK { $$ = PROJECT; }
               ;
 
-string_list: STRING                          { $$ = $1; }
-           | IDENTIFIER                      { $$ = $1; }
-           | string_list COMMA STRING        { $$ = $3; }
-           | string_list COMMA IDENTIFIER    { $$ = $3; }
+string_list: STRING                          { free($1); $$ = NULL; }
+           | IDENTIFIER                      { free($1); $$ = NULL; }
+           | string_list COMMA STRING        { free($3); $$ = NULL; }
+           | string_list COMMA IDENTIFIER    { free($3); $$ = NULL; }
            ;
 
-chart_decl: CHART STRING TYPE chart_type COLON chart_body SEMI { $$ = $2; }
-          | CHART STRING TYPE chart_type COLON chart_body { $$ = $2; }
+chart_decl: CHART STRING TYPE chart_type COLON chart_body opt_semi { $$ = $2; }
           ;
 
-chart_body: chart_option                    { $$ = $1; }
-          | chart_body chart_option         { $$ = $2; }
+opt_semi: SEMI { $$ = 0; }
+        | /* empty */ { $$ = 0; }
+        ;
+
+chart_body: required_from required_x required_y optional_options { $$ = 0; }
           ;
+
+required_from: FROM from_source opt_comma { $$ = 0; }
+             ;
+
+from_source: STRING { free($1); $$ = NULL; }
+           | IDENTIFIER { free($1); $$ = NULL; }
+           | LBRACK string_list RBRACK { $$ = NULL; }
+           ;
+
+required_x: X EQ string_or_identifier opt_comma { $$ = 0; }
+          ;
+
+string_or_identifier: STRING { free($1); $$ = NULL; }
+                    | IDENTIFIER { free($1); $$ = NULL; }
+                    ;
+
+required_y: Y EQ expression opt_comma { destroyExpression($3); $$ = 0; }
+          ;
+
+optional_options: /* empty */ { $$ = 0; }
+                | optional_options optional_option { $$ = 0; }
+                ;
+
+optional_option: orientation_option
+               | colors_option
+               | color_option
+               | legend_option
+               | hole_option
+               | id_option
+               | range_option
+               | x_range_option
+               | y_range_option
+               ;
+
+orientation_option: ORIENTATION EQ orientation opt_comma { $$ = 0; }
+                  ;
+
+colors_option: COLORS EQ LBRACK color_list RBRACK opt_comma { $$ = 0; }
+             ;
+
+color_option: COLOR_KW EQ COLOR opt_comma { free($3); $$ = 0; }
+            ;
+
+legend_option: LEGEND EQ legend_position opt_comma { $$ = 0; }
+             ;
+
+hole_option: HOLE EQ number_literal opt_comma { $$ = 0; }
+           ;
+
+id_option: ID_KW EQ string_or_identifier opt_comma { $$ = 0; }
+         ;
+
+range_option: RANGE EQ range_values opt_comma { $$ = 0; }
+            ;
+
+x_range_option: X DOT RANGE EQ range_values opt_comma { $$ = 0; }
+              ;
+
+y_range_option: Y DOT RANGE EQ range_values opt_comma { $$ = 0; }
+              ;
+
+range_values: LBRACK number_literal COMMA number_literal RBRACK { $$ = 0; }
+            ;
+
+number_literal: NUMBER { $$ = 0; }
+              | INTEGER { $$ = 0; }
+              ;
+
+opt_comma: COMMA { $$ = 0; }
+         | /* empty */ { $$ = 0; }
+         ;
 
 chart_type: PIE                              { $$ = PIE; }
           | DONUT                            { $$ = DONUT; }
@@ -127,52 +205,6 @@ chart_type: PIE                              { $$ = PIE; }
           | SCATTER                          { $$ = SCATTER; }
           | LINE                             { $$ = LINE; }
           ;
-
-chart_body: chart_option                    { $$ = $1; }
-          | chart_body chart_option         { $$ = $2; }
-          ;
-
-chart_option: FROM STRING COMMA              { $$ = $2; }
-            | FROM IDENTIFIER COMMA          { $$ = $2; }
-            | FROM LBRACK string_list RBRACK COMMA { $$ = NULL; }
-            | X EQ IDENTIFIER COMMA           { $$ = $3; }
-            | X EQ STRING COMMA               { $$ = $3; }
-             | Y EQ expression COMMA           { (void)$3; $$ = NULL; }
-            | ORIENTATION EQ orientation COMMA { $$ = NULL; }
-            | COLORS EQ LBRACK color_list RBRACK COMMA { $$ = $4; }
-            | LEGEND EQ legend_position COMMA { $$ = NULL; }
-            | HOLE EQ INTEGER COMMA           { $$ = NULL; }
-            | HOLE EQ NUMBER COMMA            { $$ = NULL; }
-            | ID_KW EQ IDENTIFIER COMMA      { $$ = $3; }
-            | ID_KW EQ STRING COMMA          { $$ = $3; }
-            | RANGE EQ LBRACK INTEGER COMMA INTEGER RBRACK COMMA { $$ = NULL; }
-            | RANGE EQ LBRACK NUMBER COMMA NUMBER RBRACK COMMA { $$ = NULL; }
-            | X DOT RANGE EQ LBRACK INTEGER COMMA INTEGER RBRACK COMMA { $$ = NULL; }
-            | X DOT RANGE EQ LBRACK NUMBER COMMA NUMBER RBRACK COMMA { $$ = NULL; }
-            | Y DOT RANGE EQ LBRACK INTEGER COMMA INTEGER RBRACK COMMA { $$ = NULL; }
-            | Y DOT RANGE EQ LBRACK NUMBER COMMA NUMBER RBRACK COMMA { $$ = NULL; }
-            | COLOR EQ COLOR COMMA            { $$ = $3; }
-            | FROM STRING SEMI                 { $$ = $2; }
-            | FROM IDENTIFIER SEMI             { $$ = $2; }
-            | FROM LBRACK string_list RBRACK SEMI { $$ = NULL; }
-            | X EQ IDENTIFIER SEMI             { $$ = $3; }
-            | X EQ STRING SEMI                 { $$ = $3; }
-            | Y EQ expression SEMI             { (void)$3; $$ = NULL; }
-            | ORIENTATION EQ orientation SEMI  { $$ = NULL; }
-            | COLORS EQ LBRACK color_list RBRACK SEMI { $$ = $4; }
-            | LEGEND EQ legend_position SEMI   { $$ = NULL; }
-            | HOLE EQ INTEGER SEMI             { $$ = NULL; }
-            | HOLE EQ NUMBER SEMI              { $$ = NULL; }
-            | ID_KW EQ IDENTIFIER SEMI         { $$ = $3; }
-            | ID_KW EQ STRING SEMI             { $$ = $3; }
-            | RANGE EQ LBRACK INTEGER COMMA INTEGER RBRACK SEMI { $$ = NULL; }
-            | RANGE EQ LBRACK NUMBER COMMA NUMBER RBRACK SEMI { $$ = NULL; }
-            | X DOT RANGE EQ LBRACK INTEGER COMMA INTEGER RBRACK SEMI { $$ = NULL; }
-            | X DOT RANGE EQ LBRACK NUMBER COMMA NUMBER RBRACK SEMI { $$ = NULL; }
-            | Y DOT RANGE EQ LBRACK INTEGER COMMA INTEGER RBRACK SEMI { $$ = NULL; }
-            | Y DOT RANGE EQ LBRACK NUMBER COMMA NUMBER RBRACK SEMI { $$ = NULL; }
-            | COLOR EQ COLOR SEMI              { $$ = $3; }
-            ;
 
 orientation: VERTICAL                        { $$ = VERTICAL; }
            | HORIZONTAL                      { $$ = HORIZONTAL; }
@@ -185,11 +217,11 @@ legend_position: TOP                         { $$ = TOP; }
                 | OFF                        { $$ = OFF; }
                 ;
 
-color_list: COLOR                            { $$ = $1; }
-          | color_list COMMA COLOR           { $$ = $3; }
+color_list: COLOR                            { free($1); $$ = NULL; }
+          | color_list COMMA COLOR           { free($3); $$ = NULL; }
           ;
 
-expression: expression AS STRING             { (void)$1; $$ = NULL; /* expression alias */ }
+expression: expression AS STRING             { destroyExpression($1); free($3); $$ = NULL; /* expression alias */ }
           | expression ADD expression       { $$ = ArithmeticExpressionSemanticAction($1, $3, ADDITION); }
           | expression SUB expression       { $$ = ArithmeticExpressionSemanticAction($1, $3, SUBTRACTION); }
           | expression MUL expression       { $$ = ArithmeticExpressionSemanticAction($1, $3, MULTIPLICATION); }
@@ -209,12 +241,12 @@ constant: INTEGER                { $$ = IntegerConstantSemanticAction($1); }
         | IDENTIFIER             { $$ = StringConstantSemanticAction($1); }
         ;
 
-aggregate_function: AVG OPEN_PARENTHESIS STRING CLOSE_PARENTHESIS    { $$ = AVG; }
-                  | MIN OPEN_PARENTHESIS STRING CLOSE_PARENTHESIS    { $$ = MIN; }
-                  | MAX OPEN_PARENTHESIS STRING CLOSE_PARENTHESIS    { $$ = MAX; }
-                  | COUNT OPEN_PARENTHESIS STRING CLOSE_PARENTHESIS   { $$ = COUNT; }
-                  | SUM OPEN_PARENTHESIS STRING CLOSE_PARENTHESIS    { $$ = SUM; }
-                  | AVERAGE OPEN_PARENTHESIS STRING CLOSE_PARENTHESIS { $$ = AVERAGE; }
+aggregate_function: AVG OPEN_PARENTHESIS STRING CLOSE_PARENTHESIS    { free($3); $$ = AVG; }
+                  | MIN OPEN_PARENTHESIS STRING CLOSE_PARENTHESIS    { free($3); $$ = MIN; }
+                  | MAX OPEN_PARENTHESIS STRING CLOSE_PARENTHESIS    { free($3); $$ = MAX; }
+                  | COUNT OPEN_PARENTHESIS STRING CLOSE_PARENTHESIS   { free($3); $$ = COUNT; }
+                  | SUM OPEN_PARENTHESIS STRING CLOSE_PARENTHESIS    { free($3); $$ = SUM; }
+                  | AVERAGE OPEN_PARENTHESIS STRING CLOSE_PARENTHESIS { free($3); $$ = AVERAGE; }
                   ;
 
 %%

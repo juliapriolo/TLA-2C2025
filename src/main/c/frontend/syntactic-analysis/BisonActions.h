@@ -7,6 +7,7 @@
 #include "../../support/type/TokenLabel.h"
 #include "AbstractSyntaxTree.h"
 #include "BisonParser.h"
+#include <stdbool.h>
 #include <stdlib.h>
 
 /** Initialize module's internal state. */
@@ -30,5 +31,7 @@ Program * ExpressionProgramSemanticAction(Expression * expression);
 /* Stubs for higher-level language constructs (chart/source) --- implement later */
 Program * SourceProgramSemanticAction(char * sourceId, char * fromId);
 Program * ChartProgramSemanticAction(char * chartId /*, more args */);
+
+bool bisonHasSemanticErrors(void);
 
 #endif

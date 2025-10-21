@@ -1,5 +1,8 @@
 #include "FlexActions.h"
+#include "FlexScanner.h"
 #include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* MODULE INTERNAL STATE */
 
@@ -95,6 +98,30 @@ static Token * _safeCreateToken(TokenLabel label) {
     Token * t = createToken(_lexicalAnalyzer, label);
     if (t == NULL) {
         if (_logger) logError(_logger, "createToken returned NULL (label=%d).", label);
+        return NULL;
+    }
+    if (_lexicalAnalyzer->scanner != NULL) {
+        yyscan_t scanner = (yyscan_t)_lexicalAnalyzer->scanner;
+        const char * yy_text = yyget_text(scanner);
+        int yy_len = yyget_leng(scanner);
+        int yy_line = yyget_lineno(scanner);
+
+        if (yy_text != NULL) {
+            size_t copy_len = (yy_len >= 0) ? (size_t)yy_len : strlen(yy_text);
+            char * duplicated = (char *)malloc(copy_len + 1);
+            if (duplicated != NULL) {
+                memcpy(duplicated, yy_text, copy_len);
+                duplicated[copy_len] = '\0';
+                t->lexeme = duplicated;
+                t->length = (unsigned int)copy_len;
+            }
+        }
+
+        if (yy_line >= 0) {
+            t->line = (unsigned int)yy_line;
+        }
+
+        t->context = currentLexicalAnalyzerContext(_lexicalAnalyzer);
     }
     return t;
 }
