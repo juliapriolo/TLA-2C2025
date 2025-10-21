@@ -75,16 +75,16 @@ stmt: source_decl                      { $$ = SourceProgramSemanticAction($1, NU
     | chart_decl                       { $$ = ChartProgramSemanticAction($1); }
     ;
 
-source_decl: SOURCE IDENTIFIER EQ FROM STRING SEMI { $$ = $2; }
-           | SOURCE IDENTIFIER EQ FROM IDENTIFIER SEMI { $$ = $2; }
-           | SOURCE IDENTIFIER EQ FROM STRING filter_clause SEMI { $$ = $2; }
-           | SOURCE IDENTIFIER EQ FROM IDENTIFIER filter_clause SEMI { $$ = $2; }
-           | SOURCE IDENTIFIER EQ FROM STRING project_clause SEMI { $$ = $2; }
-           | SOURCE IDENTIFIER EQ FROM IDENTIFIER project_clause SEMI { $$ = $2; }
-           | SOURCE IDENTIFIER EQ FROM STRING filter_clause project_clause SEMI { $$ = $2; }
-           | SOURCE IDENTIFIER EQ FROM IDENTIFIER filter_clause project_clause SEMI { $$ = $2; }
-           | SOURCE IDENTIFIER EQ FROM STRING project_clause filter_clause SEMI { $$ = $2; }
-           | SOURCE IDENTIFIER EQ FROM IDENTIFIER project_clause filter_clause SEMI { $$ = $2; }
+source_decl: SOURCE IDENTIFIER EQ FROM STRING SEMI { free($5); $$ = $2; }
+           | SOURCE IDENTIFIER EQ FROM IDENTIFIER SEMI { free($5); $$ = $2; }
+           | SOURCE IDENTIFIER EQ FROM STRING filter_clause SEMI { free($5); $$ = $2; }
+           | SOURCE IDENTIFIER EQ FROM IDENTIFIER filter_clause SEMI { free($5); $$ = $2; }
+           | SOURCE IDENTIFIER EQ FROM STRING project_clause SEMI { free($5); $$ = $2; }
+           | SOURCE IDENTIFIER EQ FROM IDENTIFIER project_clause SEMI { free($5); $$ = $2; }
+           | SOURCE IDENTIFIER EQ FROM STRING filter_clause project_clause SEMI { free($5); $$ = $2; }
+           | SOURCE IDENTIFIER EQ FROM IDENTIFIER filter_clause project_clause SEMI { free($5); $$ = $2; }
+           | SOURCE IDENTIFIER EQ FROM STRING project_clause filter_clause SEMI { free($5); $$ = $2; }
+           | SOURCE IDENTIFIER EQ FROM IDENTIFIER project_clause filter_clause SEMI { free($5); $$ = $2; }
            ;
 
 filter_clause: FILTER STRING EQEQ STRING    { free($2); free($4); $$ = FILTER; }
