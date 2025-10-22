@@ -94,6 +94,7 @@ COLOR_PATTERN       #[0-9a-fA-F]{6}
 "id"            { return KeywordLexemeAction(ID_KW); }
 "orientation"   { return KeywordLexemeAction(ORIENTATION); }
 "range"         { return KeywordLexemeAction(RANGE); }
+"title"         { return KeywordLexemeAction(TITLE); }
 
 "avg"           { return KeywordLexemeAction(AVG); }
 "average"       { return KeywordLexemeAction(AVERAGE); }

@@ -38,7 +38,7 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %token <integer> INTEGER
 %token <token> ADD SUB MUL DIV OPEN_PARENTHESIS CLOSE_PARENTHESIS OPEN_BRACE CLOSE_BRACE OPEN_COMMENT CLOSE_COMMENT
 %token <token> IGNORED UNKNOWN
-%token <token> SOURCE CHART FROM SELECT WHERE AS TYPE X Y COLORS COLOR_KW LEGEND HOLE ID_KW ORIENTATION RANGE AVG MIN MAX COUNT SUM FILTER PROJECT AVERAGE TOP BOTTOM LEFT RIGHT OFF AGGREGATE
+%token <token> SOURCE CHART FROM SELECT WHERE AS TYPE X Y COLORS COLOR_KW LEGEND HOLE ID_KW ORIENTATION RANGE AVG MIN MAX COUNT SUM FILTER PROJECT AVERAGE TOP BOTTOM LEFT RIGHT OFF AGGREGATE TITLE
 %token <token> PIE DONUT BAR SCATTER LINE VERTICAL HORIZONTAL
 %token <stringValue> IDENTIFIER
 %token <stringValue> STRING
@@ -60,7 +60,7 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %type <stringValue> string_list string_or_identifier from_source
 %type <colorValue> color_list
 %type <token> chart_body filter_clause project_clause chart_type orientation legend_position aggregate_function
-%type <token> required_from required_x required_y optional_options optional_option opt_comma opt_semi range_values number_literal orientation_option colors_option color_option legend_option hole_option id_option range_option x_range_option y_range_option
+%type <token> required_from required_x required_y optional_options optional_option opt_comma opt_semi range_values number_literal orientation_option colors_option color_option legend_option hole_option id_option range_option x_range_option y_range_option title_option
 
 %%
 
@@ -109,13 +109,13 @@ filter_clause: FILTER STRING EQEQ STRING    { free($2); free($4); $$ = FILTER; }
              | FILTER IDENTIFIER EQEQ INTEGER { free($2); $$ = FILTER; }
              ;
 
-project_clause: PROJECT LBRACK string_list RBRACK { $$ = PROJECT; }
+project_clause: PROJECT LBRACK string_list RBRACK { (void)$3; $$ = PROJECT; }
               ;
 
 string_list: STRING                          { free($1); $$ = NULL; }
            | IDENTIFIER                      { free($1); $$ = NULL; }
-           | string_list COMMA STRING        { free($3); $$ = NULL; }
-           | string_list COMMA IDENTIFIER    { free($3); $$ = NULL; }
+           | string_list COMMA STRING        { (void)$1; free($3); $$ = NULL; }
+           | string_list COMMA IDENTIFIER    { (void)$1; free($3); $$ = NULL; }
            ;
 
 chart_decl: CHART STRING TYPE chart_type COLON chart_body opt_semi { $$ = $2; }
@@ -128,15 +128,15 @@ opt_semi: SEMI { $$ = 0; }
 chart_body: required_from required_x required_y optional_options { $$ = 0; }
           ;
 
-required_from: FROM from_source opt_comma { $$ = 0; }
+required_from: FROM from_source opt_comma { (void)$2; $$ = 0; }
              ;
 
 from_source: STRING { free($1); $$ = NULL; }
            | IDENTIFIER { free($1); $$ = NULL; }
-           | LBRACK string_list RBRACK { $$ = NULL; }
+           | LBRACK string_list RBRACK { (void)$2; $$ = NULL; }
            ;
 
-required_x: X EQ string_or_identifier opt_comma { $$ = 0; }
+required_x: X EQ string_or_identifier opt_comma { (void)$3; $$ = 0; }
           ;
 
 string_or_identifier: STRING { free($1); $$ = NULL; }
@@ -159,12 +159,13 @@ optional_option: orientation_option
                | range_option
                | x_range_option
                | y_range_option
+               | title_option
                ;
 
 orientation_option: ORIENTATION EQ orientation opt_comma { $$ = 0; }
                   ;
 
-colors_option: COLORS EQ LBRACK color_list RBRACK opt_comma { $$ = 0; }
+colors_option: COLORS EQ LBRACK color_list RBRACK opt_comma { (void)$4; $$ = 0; }
              ;
 
 color_option: COLOR_KW EQ COLOR opt_comma { free($3); $$ = 0; }
@@ -176,7 +177,7 @@ legend_option: LEGEND EQ legend_position opt_comma { $$ = 0; }
 hole_option: HOLE EQ number_literal opt_comma { $$ = 0; }
            ;
 
-id_option: ID_KW EQ string_or_identifier opt_comma { $$ = 0; }
+id_option: ID_KW EQ string_or_identifier opt_comma { (void)$3; $$ = 0; }
          ;
 
 range_option: RANGE EQ range_values opt_comma { $$ = 0; }
@@ -187,6 +188,9 @@ x_range_option: X DOT RANGE EQ range_values opt_comma { $$ = 0; }
 
 y_range_option: Y DOT RANGE EQ range_values opt_comma { $$ = 0; }
               ;
+
+title_option: TITLE EQ STRING opt_comma { free($3); $$ = 0; }
+            ;
 
 range_values: LBRACK number_literal COMMA number_literal RBRACK { $$ = 0; }
             ;
@@ -218,7 +222,7 @@ legend_position: TOP                         { $$ = TOP; }
                 ;
 
 color_list: COLOR                            { free($1); $$ = NULL; }
-          | color_list COMMA COLOR           { free($3); $$ = NULL; }
+          | color_list COMMA COLOR           { (void)$1; free($3); $$ = NULL; }
           ;
 
 expression: expression AS STRING             { destroyExpression($1); free($3); $$ = NULL; /* expression alias */ }

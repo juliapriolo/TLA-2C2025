@@ -1,0 +1,9 @@
+chart "Gráfico completo con título" type pie:
+  from "tartas_2025.csv",
+  x = "Tipo de tartas",
+  y = "Cantidad",
+  title = "Distribución de Tartas por Tipo",
+  colors = [#FF6B6B, #4ECDC4, #45B7D1],
+  legend = bottom,
+  hole = 0.1,
+  id = "grafico_tartas_completo";

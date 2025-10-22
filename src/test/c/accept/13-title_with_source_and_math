@@ -1,0 +1,12 @@
+source datos_filtrados = from "personas.csv"
+    filter "Edad" > 18
+    project ["Edad", "Altura", "Peso"];
+
+chart "Análisis BMI por Edad" type line:
+  from datos_filtrados,
+  x = "Edad",
+  y = "Peso"/("Altura"*"Altura") as "BMI",
+  title = "Índice de Masa Corporal vs Edad",
+  colors = [#8E44AD, #E74C3C],
+  legend = right,
+  id = "grafico_bmi_con_titulo";
