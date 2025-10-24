@@ -3,6 +3,7 @@
 #include "frontend/Frontend.h"
 #include "frontend/lexical-analysis/FlexActions.h"
 #include "frontend/syntactic-analysis/BisonActions.h"
+#include "frontend/syntactic-analysis/ASTPrinter.h"
 #include "support/logging/Logger.h"
 #include "support/type/CompilationStatus.h"
 #include "support/type/CompilerState.h"
@@ -55,6 +56,13 @@ const int main(const int length, const char ** arguments) {
 		logError(logger, "The syntactic-analysis phase rejects the input program.");
 		compilationStatus = FAILED;
 	}
+	/* A*/
+
+	/* Print AST for debugging/visualization (if available) */
+	if (program != NULL) {
+		printProgramAST(program);
+	}
+	/* A*/
 	logDebugging(logger, "Releasing AST resources...");
 	destroyProgram(program);
 	for (int k = (sizeof(moduleDestructors)/sizeof(ModuleDestructor)) - 1; 0 <= k; --k) {
