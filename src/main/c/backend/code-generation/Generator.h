@@ -8,6 +8,7 @@
 #include "../../support/type/ModuleDestructor.h"
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 /** Initialize module's internal state. */
 ModuleDestructor initializeGeneratorModule();

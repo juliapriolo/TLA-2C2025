@@ -35,6 +35,9 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 	add_executable(Flex-Bison-Compiler
 		src/main/c/backend/code-generation/Generator.c
 		src/main/c/backend/domain-specific/Calculator.c
+		src/main/c/backend/data-processing/CSVProcessor.c
+		src/main/c/backend/data-processing/DataProcessor.c
+		src/main/c/backend/chart-processing/ChartProcessor.c
 		src/main/c/EntryPoint.c
 		src/main/c/frontend/Frontend.c
 		src/main/c/frontend/lexical-analysis/FlexActions.c
@@ -50,7 +53,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 	)
 
 	# Link final project and libraries.
-	target_link_libraries(Flex-Bison-Compiler)
+	target_link_libraries(Flex-Bison-Compiler m)
 else ()
 	message(NOTICE "The C compiler is unknown.")
 endif ()

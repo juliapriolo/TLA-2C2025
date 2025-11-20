@@ -1,4 +1,4 @@
-source base = from "ventas.csv"
+source base = from "ventas_con_año.csv"
     filter "Año" == 2024;
 
 source mayores_a_1000 = from base

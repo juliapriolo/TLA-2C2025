@@ -1,5 +1,8 @@
 #include "backend/code-generation/Generator.h"
 #include "backend/domain-specific/Calculator.h"
+#include "backend/data-processing/CSVProcessor.h"
+#include "backend/data-processing/DataProcessor.h"
+#include "backend/chart-processing/ChartProcessor.h"
 #include "frontend/Frontend.h"
 #include "frontend/lexical-analysis/FlexActions.h"
 #include "frontend/syntactic-analysis/BisonActions.h"
@@ -31,6 +34,9 @@ const int main(const int length, const char ** arguments) {
 		initializeBisonActionsModule(&compilerState),
 		initializeFrontendModule(lexicalAnalyzer),
 		initializeCalculatorModule(),
+		initializeCSVProcessorModule(),
+		initializeDataProcessorModule(),
+		initializeChartProcessorModule(),
 		initializeGeneratorModule()
 	};
 	CompilationStatus compilationStatus = executeSyntacticAnalysis();
@@ -43,10 +49,13 @@ const int main(const int length, const char ** arguments) {
 	if (compilationStatus == SUCCEEDED) {
 		// ----------------------------------------------------------------------------------------
 		// Beginning of the Backend... ------------------------------------------------------------
-		/*
-		// Solo ejecutar el backend de calculadora si hay una expresión (modo calculadora)
-		// Si hay statements (modo DSL de gráficos), el backend se ejecutará después
-		if (program != NULL && program->expression != NULL) {
+		if (program != NULL && program->statements != NULL) {
+			// Programa DSL de gráficos: generar HTML/JavaScript
+			logDebugging(logger, "DSL program detected (charts/sources). Generating HTML/JavaScript...");
+			executeGenerator(&compilerState);
+		}
+		else if (program != NULL && program->expression != NULL) {
+			// Programa de calculadora: mantener comportamiento original
 			logDebugging(logger, "Computing expression value...");
 			ComputationResult computationResult = executeCalculator(&compilerState);
 			if (computationResult.succeeded) {
@@ -58,14 +67,9 @@ const int main(const int length, const char ** arguments) {
 				compilationStatus = FAILED;
 			}
 		}
-		else if (program != NULL && program->statements != NULL) {
-			logDebugging(logger, "DSL program detected (charts/sources). Backend for charts not yet implemented.");
-			// TODO: Aquí irá el backend para procesar Charts y Sources
-		}
 		else {
 			logDebugging(logger, "Empty program - nothing to execute.");
 		}
-		*/
 		// ...end of the Backend. -----------------------------------------------------------------
 		// ----------------------------------------------------------------------------------------
 	}
