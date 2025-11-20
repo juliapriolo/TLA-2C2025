@@ -1,8 +1,0 @@
-chart "Gráfico con título personalizado" type bar:
-  from "ventas.csv",
-  x = "Mes",
-  y = "Monto",
-  title = "Ventas Mensuales 2024",
-  colors = [#FF5733, #33FF57],
-  legend = top,
-  id = "grafico_con_titulo";
