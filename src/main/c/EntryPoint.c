@@ -3,10 +3,12 @@
 #include "frontend/Frontend.h"
 #include "frontend/lexical-analysis/FlexActions.h"
 #include "frontend/syntactic-analysis/BisonActions.h"
+#include "frontend/syntactic-analysis/AbstractSyntaxTree.h"
 #include "support/logging/Logger.h"
 #include "support/type/CompilationStatus.h"
 #include "support/type/CompilerState.h"
 #include "support/type/ModuleDestructor.h"
+#include <stdio.h>
 
 /**
  * The main entry-point of the entire application. If you use "strtok" to
@@ -33,23 +35,39 @@ const int main(const int length, const char ** arguments) {
 	};
 	CompilationStatus compilationStatus = executeSyntacticAnalysis();
 	Program * program = compilerState.abstractSyntaxtTree;
+	
+	if (compilationStatus == SUCCEEDED && program != NULL) {
+		printAST(program);
+	}
+	
 	if (compilationStatus == SUCCEEDED) {
 		// ----------------------------------------------------------------------------------------
 		// Beginning of the Backend... ------------------------------------------------------------
 		/*
-		logDebugging(logger, "Computing expression value...");
-		ComputationResult computationResult = executeCalculator(&compilerState);
-		if (computationResult.succeeded) {
-			compilerState.value = computationResult.value;
-			executeGenerator(&compilerState);
+		// Solo ejecutar el backend de calculadora si hay una expresión (modo calculadora)
+		// Si hay statements (modo DSL de gráficos), el backend se ejecutará después
+		if (program != NULL && program->expression != NULL) {
+			logDebugging(logger, "Computing expression value...");
+			ComputationResult computationResult = executeCalculator(&compilerState);
+			if (computationResult.succeeded) {
+				compilerState.value = computationResult.value;
+				executeGenerator(&compilerState);
+			}
+			else {
+				logError(logger, "The computation phase rejects the input program.");
+				compilationStatus = FAILED;
+			}
+		}
+		else if (program != NULL && program->statements != NULL) {
+			logDebugging(logger, "DSL program detected (charts/sources). Backend for charts not yet implemented.");
+			// TODO: Aquí irá el backend para procesar Charts y Sources
 		}
 		else {
-			logError(logger, "The computation phase rejects the input program.");
-			compilationStatus = FAILED;
+			logDebugging(logger, "Empty program - nothing to execute.");
 		}
+		*/
 		// ...end of the Backend. -----------------------------------------------------------------
 		// ----------------------------------------------------------------------------------------
-		*/
 	}
 	else {
 		logError(logger, "The syntactic-analysis phase rejects the input program.");

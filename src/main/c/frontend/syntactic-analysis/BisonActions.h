@@ -26,11 +26,32 @@ Expression * ArithmeticExpressionSemanticAction(Expression * leftExpression, Exp
 Expression * FactorExpressionSemanticAction(Factor * factor);
 Factor * ConstantFactorSemanticAction(Constant * constant);
 Factor * ExpressionFactorSemanticAction(Expression * expression);
+Factor * AggregateFactorSemanticAction(AggregateFunction function, char * columnName);
+AggregateFunction AggregateFunctionSemanticAction(TokenLabel token);
 Program * ExpressionProgramSemanticAction(Expression * expression);
 
-/* Stubs for higher-level language constructs (chart/source) --- implement later */
-Program * SourceProgramSemanticAction(char * sourceId, char * fromId);
-Program * ChartProgramSemanticAction(char * chartId /*, more args */);
+/* Semantic actions for DSL constructs */
+Statement * SourceStatementSemanticAction(char * sourceId, char * csvFile, char * sourceIdentifier, FilterCondition * filters, Projection * projection);
+Statement * ChartStatementSemanticAction(char * title, ChartType type, Source * sources, char * xColumn, Expression * yExpression, char * yAlias);
+Program * ProgramFromStatementsSemanticAction(Statement * statements);
+FilterCondition * FilterConditionSemanticAction(char * columnName, TokenLabel operator, char * stringValue);
+FilterCondition * FilterConditionIntSemanticAction(char * columnName, TokenLabel operator, int intValue);
+Projection * ProjectionSemanticAction(char ** columns, size_t columnCount);
+Source * SourceSemanticAction(char * identifier, char * csvFile, char * sourceIdentifier, FilterCondition * filters, Projection * projection);
+Chart * ChartSemanticAction(char * title, ChartType type, Source * sources, char * xColumn, Expression * yExpression, char * yAlias);
+ChartType ChartTypeSemanticAction(TokenLabel token);
+FilterOperator FilterOperatorSemanticAction(TokenLabel token);
+
+void SetCurrentChart(Chart * chart);
+void SetChartId(char * id);
+void SetChartYAlias(char * alias);
+void SetChartOrientation(TokenLabel orientation);
+void SetChartColors(char ** colors, size_t colorCount);
+void SetChartSingleColor(char * color);
+void SetChartXRange(double * range);
+void SetChartYRange(double * range);
+void SetChartLegendPosition(TokenLabel position);
+void SetChartHole(double hole);
 
 bool bisonHasSemanticErrors(void);
 

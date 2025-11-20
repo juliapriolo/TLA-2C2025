@@ -2,6 +2,7 @@
 #include "lexical-analysis/FlexScanner.h"
 #include "syntactic-analysis/BisonParser.h"
 #include "syntactic-analysis/BisonActions.h"
+#include <stdio.h>
 
 /* MODULE INTERNAL STATE */
 
@@ -178,8 +179,10 @@ CompilationStatus executeSyntacticAnalysis() {
 	while (status == IN_PROGRESS) {
 		status = executeLexicalAnalysis(_lexicalAnalyzer);
 	}
-	if (status == SUCCEEDED && bisonHasSemanticErrors()) {
-		status = FAILED;
+	if (status == SUCCEEDED) {
+		if (bisonHasSemanticErrors()) {
+			status = FAILED;
+		}
 	}
 	logDebugging(_logger, "Compilation status: %s.", _compilationStatusAsString(status));
 	logDebugging(_logger, "Parsing is done.");
@@ -200,9 +203,24 @@ void pushInputBuffer(InputBuffer * inputBuffer) {
 }
 
 CompilationStatus pushToken(LexicalAnalyzer * lexicalAnalyzer, Token * token) {
-	return (CompilationStatus) yypush_parse(
+	int bisonStatus = yypush_parse(
 		(yypstate *) lexicalAnalyzer->parser,
 		token->label,
 		(const YYSTYPE *) token->semanticValue,
 		(YYLTYPE *) lexicalAnalyzer->location);
+	
+	// Convertir valores de Bison a CompilationStatus
+	// YYPUSH_MORE = 4 -> IN_PROGRESS = 4
+	// 0 (YYACCEPT) -> SUCCEEDED = 0
+	// 1 (YYABORT) -> FAILED = 1
+	if (bisonStatus == 4) {  // YYPUSH_MORE
+		return IN_PROGRESS;
+	} else if (bisonStatus == 0) {  // YYACCEPT
+		return SUCCEEDED;
+	} else if (bisonStatus == 1) {  // YYABORT
+		return FAILED;
+	} else {
+		// Otro valor de error
+		return FAILED;
+	}
 }
