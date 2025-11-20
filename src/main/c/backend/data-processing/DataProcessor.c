@@ -332,13 +332,15 @@ double evaluateExpression(Expression * expression, CSVRow * row, CSVData * csvDa
 		case DIVISION: {
 			double left = evaluateExpression(expression->leftExpression, row, csvData);
 			double right = evaluateExpression(expression->rightExpression, row, csvData);
+			double result = 0.0;
 			switch (expression->type) {
-				case ADDITION: return left + right;
-				case SUBTRACTION: return left - right;
-				case MULTIPLICATION: return left * right;
-				case DIVISION: return right != 0.0 ? left / right : 0.0;
-				default: return 0.0;
+				case ADDITION: result = left + right; break;
+				case SUBTRACTION: result = left - right; break;
+				case MULTIPLICATION: result = left * right; break;
+				case DIVISION: result = right != 0.0 ? left / right : 0.0; break;
+				default: result = 0.0; break;
 			}
+			return result;
 		}
 		case FACTOR: {
 			if (expression->factor == NULL) {
@@ -351,10 +353,27 @@ double evaluateExpression(Expression * expression, CSVRow * row, CSVData * csvDa
 						if (c->string != NULL) {
 							// Es un identificador de columna
 							int colIndex = getColumnIndex(csvData, c->string);
-							if (colIndex >= 0) {
-								const char * value = getCellValue(row, (size_t)colIndex);
-								return value != NULL ? atof(value) : 0.0;
+							if (colIndex < 0) {
+								// Column not found - log for debugging
+								logError(_logger, "Column '%s' not found in CSV. Available columns:", c->string);
+								if (csvData != NULL && csvData->headers != NULL) {
+									for (size_t i = 0; i < csvData->headerCount; i++) {
+										if (csvData->headers[i] != NULL) {
+											logError(_logger, "  [%zu] '%s'", i, csvData->headers[i]);
+										}
+									}
+								} else {
+									logError(_logger, "  (CSV data or headers are NULL)");
+								}
+								return 0.0;
 							}
+							const char * value = getCellValue(row, (size_t)colIndex);
+							if (value == NULL) {
+								logError(_logger, "Cell value is NULL for column '%s' at index %d", c->string, colIndex);
+								return 0.0;
+							}
+							double result = atof(value);
+							return result;
 						} else if (c->number != 0.0) {
 							return c->number;
 						} else {

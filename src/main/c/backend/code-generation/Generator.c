@@ -205,7 +205,8 @@ static void _generateChartJS(Chart * chart, ChartData * chartData, const char * 
 	_output(5, "data: [");
 	for (size_t i = 0; i < chartData->dataCount; i++) {
 		if (i > 0) _output(0, ", ");
-		_output(0, "%.2f", chartData->values[i]);
+		// Usar más decimales para valores pequeños (como BMI)
+		_output(0, "%.6f", chartData->values[i]);
 	}
 	_output(0, "],\n");
 	
@@ -216,9 +217,33 @@ static void _generateChartJS(Chart * chart, ChartData * chartData, const char * 
 			if (i > 0) _output(0, ", ");
 			_output(0, "'%s'", chart->colors[i] != NULL ? chart->colors[i] : "#3498db");
 		}
+		// Si hay más datos que colores, repetir el último color o usar colores por defecto
+		if (chartData->dataCount > chart->colorCount) {
+			const char * lastColor = chart->colors[chart->colorCount - 1] != NULL ? chart->colors[chart->colorCount - 1] : "#3498db";
+			for (size_t i = chart->colorCount; i < chartData->dataCount; i++) {
+				_output(0, ", '%s'", lastColor);
+			}
+		}
 		_output(0, "],\n");
 	} else if (chart->singleColor != NULL) {
 		_output(5, "backgroundColor: '%s',\n", chart->singleColor);
+	} else {
+		// Para pie/donut charts, generar colores por defecto si no se especifican
+		// Chart.js tiene una paleta por defecto, pero es mejor especificarla explícitamente
+		if (chart->type == CHART_PIE || chart->type == CHART_DONUT) {
+			// Paleta de colores por defecto para pie charts
+			const char * defaultColors[] = {
+				"#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF",
+				"#FF9F40", "#FF6384", "#C9CBCF", "#4BC0C0", "#FF6384"
+			};
+			size_t defaultColorCount = sizeof(defaultColors) / sizeof(defaultColors[0]);
+			_output(5, "backgroundColor: [");
+			for (size_t i = 0; i < chartData->dataCount; i++) {
+				if (i > 0) _output(0, ", ");
+				_output(0, "'%s'", defaultColors[i % defaultColorCount]);
+			}
+			_output(0, "],\n");
+		}
 	}
 	
 	_output(4, "}]\n");

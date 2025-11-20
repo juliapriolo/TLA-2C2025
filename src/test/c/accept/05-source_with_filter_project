@@ -5,7 +5,7 @@ source datos_filtrados = from "personas.csv"
 chart "BMI Promedio" type line:
   from datos_filtrados,
   x = "Edad",
-  y = "Peso"/("Altura"*"Altura") as "BMI",
+  y = "Peso"*10000/("Altura"*"Altura") as "BMI",
   colors = [#8E44AD],
   id = "grafico_bmi";
 
