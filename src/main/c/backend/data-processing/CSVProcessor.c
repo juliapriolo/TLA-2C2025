@@ -9,7 +9,7 @@ static Logger * _logger = NULL;
 /** Shutdown module's internal state. */
 void _shutdownCSVProcessorModule() {
 	if (_logger != NULL) {
-		logDebugging(_logger, "Destroying module: CSVProcessor...");
+		// logDebugging(_logger, "Destroying module: CSVProcessor...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
@@ -188,7 +188,7 @@ CSVData * readCSVFile(const char * filePath) {
 	
 	fclose(file);
 	
-	logDebugging(_logger, "CSV file loaded: %zu headers, %zu rows", data->headerCount, data->rowCount);
+	// logDebugging(_logger, "CSV file loaded: %zu headers, %zu rows", data->headerCount, data->rowCount);
 	return data;
 }
 

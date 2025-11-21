@@ -9,7 +9,7 @@ static Logger * _logger = NULL;
 /** Shutdown module's internal state. */
 void _shutdownAbstractSyntaxTreeModule() {
 	if (_logger != NULL) {
-		logDebugging(_logger, "Destroying module: AbstractSyntaxTree...");
+		// logDebugging(_logger, "Destroying module: AbstractSyntaxTree...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
@@ -105,7 +105,7 @@ Program * createProgramFromExpression(Expression * expression) {
 /* PUBLIC FUNCTIONS */
 
 void destroyConstant(Constant * constant) {
-	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	// logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (constant != NULL) {
 		if (constant->string != NULL) {
 			free(constant->string);
@@ -120,7 +120,7 @@ void destroyConstant(Constant * constant) {
 }
 
 void destroyExpression(Expression * expression) {
-	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	// logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (expression != NULL) {
 		switch (expression->type) {
 			case ADDITION:
@@ -139,7 +139,7 @@ void destroyExpression(Expression * expression) {
 }
 
 void destroyFactor(Factor * factor) {
-	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	// logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (factor != NULL) {
 		switch (factor->type) {
 			case CONSTANT:
@@ -374,7 +374,7 @@ void destroyStatement(Statement * statement) {
 }
 
 void destroyProgram(Program * program) {
-	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	// logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (program != NULL) {
 		destroyStatement(program->statements);
 		destroyExpression(program->expression);

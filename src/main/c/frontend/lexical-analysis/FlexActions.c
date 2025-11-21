@@ -14,7 +14,7 @@ static Logger * _logger = NULL;
 /** limpia y libera recursos del módulo (logger, input buffer) */
 void _shutdownFlexActionsModule() {
 	if (_logger != NULL) {
-		logDebugging(_logger, "Destroying module: FlexActions...");
+		// logDebugging(_logger, "Destroying module: FlexActions...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
@@ -52,40 +52,9 @@ static void _logTokenAction(const char * actionName, Token * token);
  */
  /* imprime en el log info del token */
 static void _logTokenAction(const char * actionName, Token * token) {
-    if (_logger == NULL) {
-        /* Nothing to log to; avoid crash. */
-        return;
-    }
-    if (token == NULL) {
-        logDebugging(_logger, WARNING_COLOR "%s" DEFAULT_COLOR ": Token(NULL)", actionName);
-        return;
-    }
-
-    const char * lexeme_display = "(null)";
-    char * escaped = NULL;
-    if (token->lexeme != NULL) {
-        escaped = escape(token->lexeme); /* asumir que escape devuelve malloc'd string o literal */
-        if (escaped != NULL) {
-            lexeme_display = escaped;
-        } else {
-            lexeme_display = token->lexeme; /* fallback */
-        }
-    }
-
-    logDebugging(_logger,
-        WARNING_COLOR "%s" DEFAULT_COLOR ": Token(context=%d, label=%d, length=%d, lexeme=%s\"%s\"%s, line=%d, semanticValue=%p)",
-        actionName,
-        token->context,
-        token->label,
-        token->length,
-        INFORMATION_COLOR, lexeme_display, DEFAULT_COLOR,
-        token->line,
-        token->semanticValue);
-
-    if (escaped != NULL) {
-        free(escaped);
-        escaped = NULL;
-    }
+    // Logging disabled
+    (void)actionName;
+    (void)token;
 }
 
 

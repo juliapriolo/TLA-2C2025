@@ -22,7 +22,7 @@ const int main(const int length, const char ** arguments) {
 	LexicalAnalyzer * lexicalAnalyzer = createLexicalAnalyzer();
 	Logger * logger = createLogger("EntryPoint");
 	for (int k = 0; k < length; ++k) {
-		logDebugging(logger, "Argument %d: \"%s\"", k, arguments[k]);
+//		logDebugging(logger, "Argument %d: \"%s\"", k, arguments[k]);
 	}
 	CompilerState compilerState = {
 		.abstractSyntaxtTree = NULL,
@@ -51,12 +51,12 @@ const int main(const int length, const char ** arguments) {
 		// Beginning of the Backend... ------------------------------------------------------------
 		if (program != NULL && program->statements != NULL) {
 			// Programa DSL de gráficos: generar HTML/JavaScript
-			logDebugging(logger, "DSL program detected (charts/sources). Generating HTML/JavaScript...");
+//			logDebugging(logger, "DSL program detected (charts/sources). Generating HTML/JavaScript...");
 			executeGenerator(&compilerState);
 		}
 		else if (program != NULL && program->expression != NULL) {
 			// Programa de calculadora: mantener comportamiento original
-			logDebugging(logger, "Computing expression value...");
+//			logDebugging(logger, "Computing expression value...");
 			ComputationResult computationResult = executeCalculator(&compilerState);
 			if (computationResult.succeeded) {
 				compilerState.value = computationResult.value;
@@ -68,7 +68,7 @@ const int main(const int length, const char ** arguments) {
 			}
 		}
 		else {
-			logDebugging(logger, "Empty program - nothing to execute.");
+//			logDebugging(logger, "Empty program - nothing to execute.");
 		}
 		// ...end of the Backend. -----------------------------------------------------------------
 		// ----------------------------------------------------------------------------------------
@@ -77,12 +77,12 @@ const int main(const int length, const char ** arguments) {
 		logError(logger, "The syntactic-analysis phase rejects the input program.");
 		compilationStatus = FAILED;
 	}
-	logDebugging(logger, "Releasing AST resources...");
+//	logDebugging(logger, "Releasing AST resources...");
 	destroyProgram(program);
 	for (int k = (sizeof(moduleDestructors)/sizeof(ModuleDestructor)) - 1; 0 <= k; --k) {
 		moduleDestructors[k]();
 	}
-	logDebugging(logger, "Compilation is done.");
+//	logDebugging(logger, "Compilation is done.");
 	destroyLogger(logger);
 	destroyLexicalAnalyzer(lexicalAnalyzer);
 	return compilationStatus;

@@ -12,7 +12,7 @@ static Logger * _logger = NULL;
 /** Shutdown module's internal state. */
 void _shutdownFrontendModule() {
 	if (_logger != NULL) {
-		logDebugging(_logger, "Destroying module: Frontend...");
+		// logDebugging(_logger, "Destroying module: Frontend...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
@@ -174,7 +174,7 @@ CompilationStatus executeLexicalAnalysis(LexicalAnalyzer * lexicalAnalyzer) {
 }
 
 CompilationStatus executeSyntacticAnalysis() {
-	logDebugging(_logger, "Parsing...");
+	// logDebugging(_logger, "Parsing...");
 	CompilationStatus status = IN_PROGRESS;
 	while (status == IN_PROGRESS) {
 		status = executeLexicalAnalysis(_lexicalAnalyzer);
@@ -184,8 +184,8 @@ CompilationStatus executeSyntacticAnalysis() {
 			status = FAILED;
 		}
 	}
-	logDebugging(_logger, "Compilation status: %s.", _compilationStatusAsString(status));
-	logDebugging(_logger, "Parsing is done.");
+	// logDebugging(_logger, "Compilation status: %s.", _compilationStatusAsString(status));
+	// logDebugging(_logger, "Parsing is done.");
 	return status;
 }
 

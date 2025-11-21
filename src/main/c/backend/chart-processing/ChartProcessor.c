@@ -10,7 +10,7 @@ static Logger * _logger = NULL;
 /** Shutdown module's internal state. */
 void _shutdownChartProcessorModule() {
 	if (_logger != NULL) {
-		logDebugging(_logger, "Destroying module: ChartProcessor...");
+		// logDebugging(_logger, "Destroying module: ChartProcessor...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
@@ -33,9 +33,9 @@ static CSVData * _findCSVData(const char * identifier, CSVData ** csvDataMap, co
 	
 	for (size_t i = 0; i < sourceCount; i++) {
 		if (sourceIdentifiers[i] != NULL) {
-			logDebugging(_logger, "Comparing '%s' with stored identifier '%s'", identifier, sourceIdentifiers[i]);
+			// logDebugging(_logger, "Comparing '%s' with stored identifier '%s'", identifier, sourceIdentifiers[i]);
 			if (strcmp(sourceIdentifiers[i], identifier) == 0) {
-				logDebugging(_logger, "Found match at index %zu", i);
+				// logDebugging(_logger, "Found match at index %zu", i);
 				return csvDataMap[i];
 			}
 		}
@@ -438,7 +438,7 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 			}
 		} else if (source->sourceIdentifier != NULL) {
 			// Obtener de source predefinida (ya procesada en Generator)
-			logDebugging(_logger, "Looking for source identifier: %s (map has %zu sources)", source->sourceIdentifier, sourceCount);
+			// logDebugging(_logger, "Looking for source identifier: %s (map has %zu sources)", source->sourceIdentifier, sourceCount);
 			csvData = _findCSVData(source->sourceIdentifier, csvDataMap, sourceIdentifiers, sourceCount);
 			if (csvData == NULL) {
 				logError(_logger, "Source identifier not found: %s (searched in %zu sources)", source->sourceIdentifier, sourceCount);

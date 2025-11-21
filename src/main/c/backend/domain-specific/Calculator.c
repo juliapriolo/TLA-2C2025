@@ -7,7 +7,7 @@ static Logger * _logger = NULL;
 /** Shutdown module's internal state. */
 void _shutdownCalculatorModule() {
 	if (_logger != NULL) {
-		logDebugging(_logger, "Destroying module: Calculator...");
+		// logDebugging(_logger, "Destroying module: Calculator...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}

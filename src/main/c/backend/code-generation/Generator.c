@@ -14,7 +14,7 @@ static Logger * _logger = NULL;
 /** Shutdown module's internal state. */
 void _shutdownGeneratorModule() {
 	if (_logger != NULL) {
-		logDebugging(_logger, "Destroying module: Generator...");
+		// logDebugging(_logger, "Destroying module: Generator...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
@@ -52,7 +52,7 @@ static const char _expressionTypeToCharacter(const ExpressionType type) {
 		case MULTIPLICATION: return '*';
 		case SUBTRACTION: return '-';
 		default:
-			logError(_logger, "The specified expression type cannot be converted into character: %d", type);
+			// logError(_logger, "The specified expression type cannot be converted into character: %d", type);
 			return '\0';
 	}
 }
@@ -345,7 +345,7 @@ static void _generateHTMLEpilogue(void) {
 /** PUBLIC FUNCTIONS */
 
 void executeGenerator(CompilerState * compilerState) {
-	logDebugging(_logger, "Generating final output...");
+	// logDebugging(_logger, "Generating final output...");
 	
 	Program * program = compilerState->abstractSyntaxtTree;
 	if (program == NULL) {
@@ -473,7 +473,7 @@ void executeGenerator(CompilerState * compilerState) {
 										free(processed);
 										
 										csvDataMap[targetIndex] = processedCSV;
-										logDebugging(_logger, "Stored source '%s' in map at index %zu", source->identifier, targetIndex);
+										// logDebugging(_logger, "Stored source '%s' in map at index %zu", source->identifier, targetIndex);
 									} else {
 										destroyProcessedData(processed);
 										// Liberar el slot reservado
@@ -526,9 +526,9 @@ void executeGenerator(CompilerState * compilerState) {
 							// Debug: mostrar qué sources están en el mapa
 							for (size_t i = 0; i < sourceCount; i++) {
 								if (sourceIdentifiers[i] != NULL) {
-									logDebugging(_logger, "  Map[%zu]: identifier='%s', data=%p", i, sourceIdentifiers[i], (void*)csvDataMap[i]);
+									// logDebugging(_logger, "  Map[%zu]: identifier='%s', data=%p", i, sourceIdentifiers[i], (void*)csvDataMap[i]);
 								} else {
-									logDebugging(_logger, "  Map[%zu]: NULL", i);
+									// logDebugging(_logger, "  Map[%zu]: NULL", i);
 								}
 							}
 							// Continuar con la siguiente source
@@ -568,8 +568,8 @@ void executeGenerator(CompilerState * compilerState) {
 												// Slot libre, guardar aquí
 												csvDataMap[i] = processedCSV;
 												sourceIdentifiers[i] = source->identifier;
-												logDebugging(_logger, "Stored composed source '%s' (from '%s') in map at index %zu", 
-													source->identifier, source->sourceIdentifier, i);
+												// logDebugging(_logger, "Stored composed source '%s' (from '%s') in map at index %zu", 
+												//	source->identifier, source->sourceIdentifier, i);
 												stored = true;
 												break;
 											}
@@ -633,5 +633,5 @@ void executeGenerator(CompilerState * compilerState) {
 		_generateEpilogue(compilerState->value);
 	}
 	
-	logDebugging(_logger, "Generation is done.");
+	// logDebugging(_logger, "Generation is done.");
 }

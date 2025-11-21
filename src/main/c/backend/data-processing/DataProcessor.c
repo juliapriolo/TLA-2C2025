@@ -9,7 +9,7 @@ static Logger * _logger = NULL;
 /** Shutdown module's internal state. */
 void _shutdownDataProcessorModule() {
 	if (_logger != NULL) {
-		logDebugging(_logger, "Destroying module: DataProcessor...");
+		// logDebugging(_logger, "Destroying module: DataProcessor...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}

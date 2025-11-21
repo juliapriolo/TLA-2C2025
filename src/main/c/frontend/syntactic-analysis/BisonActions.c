@@ -62,7 +62,7 @@ static void _rememberSourceIdentifier(const char * identifier) {
 /** Shutdown module's internal state. */
 void _shutdownBisonActionsModule() {
 	if (_logger != NULL) {
-		logDebugging(_logger, "Destroying module: BisonActions...");
+		// logDebugging(_logger, "Destroying module: BisonActions...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
@@ -94,7 +94,7 @@ static void _logSyntacticAnalyzerAction(const char * functionName);
  * Logs a syntactic-analyzer action in DEBUGGING level.
  */
 static void _logSyntacticAnalyzerAction(const char * functionName) {
-	logDebugging(_logger, "%s", functionName);
+//	logDebugging(_logger, "%s", functionName);
 }
 
 /* PUBLIC FUNCTIONS */
