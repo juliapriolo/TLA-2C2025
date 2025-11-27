@@ -2,7 +2,7 @@ chart "Distribución de gastos mensuales" type donut:
   from "gastosmensuales.csv",
   x = Categoria,
   y = Gasto,
-  legend = off;
+  legend = off,
   hole = 0.2,
   id = grafico_donut;
 
