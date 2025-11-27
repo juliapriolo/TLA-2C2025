@@ -1,0 +1,9 @@
+source votos_contados = from "votos.csv"
+    project ["Partido_Político_Votado"];
+
+chart "Votos por Partido" type pie:
+  from votos_contados,
+  x = "Partido_Político_Votado",
+  y = count("Partido_Político_Votado"),
+  colors = [#FF5733, #33FF57, #3357FF],
+  id = "grafico_votos";

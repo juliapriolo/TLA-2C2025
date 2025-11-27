@@ -536,44 +536,94 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 	}
 	
 	if (hasAggregation) {
-		// Modo agregación: agrupar por X y agregar Y
-		AggregateFunction aggFunction;
-		char * aggColumn = NULL;
-		if (!_getAggregationInfo(chart->yExpression, &aggFunction, &aggColumn)) {
-			logError(_logger, "Cannot extract aggregation info from expression");
-			if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
-				destroyCSVData(finalData);
-			}
-			free(chartData);
-			return NULL;
-		}
 		
-		// Por ahora, simplificamos: si hay agregación, solo retornamos un valor agregado
-		// En una implementación completa, habría que agrupar por X
-		// Por simplicidad, asumimos que hay una sola fila o que queremos el total
-		double aggregatedValue = applyAggregation(finalData, aggColumn, aggFunction);
-		
-		chartData->dataCount = 1;
-		chartData->labels = calloc(2, sizeof(char*));
-		chartData->values = calloc(1, sizeof(double));
-		
-		if (chartData->labels == NULL || chartData->values == NULL) {
-			if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
-				destroyCSVData(finalData);
-			}
-			free(chartData);
-			return NULL;
-		}
-		
-		chartData->labels[0] = chart->title != NULL ? strdup(chart->title) : strdup("Total");
-		chartData->labels[1] = NULL;
-		chartData->values[0] = aggregatedValue;
-		
-		if (chart->yAlias != NULL) {
-			chartData->yLabel = strdup(chart->yAlias);
-		} else {
-			chartData->yLabel = aggColumn != NULL ? strdup(aggColumn) : strdup("Value");
-		}
+    AggregateFunction aggFunction;
+    char * aggColumn = NULL;
+
+    if (!_getAggregationInfo(chart->yExpression, &aggFunction, &aggColumn)) {
+        logError(_logger, "Cannot extract aggregation info from expression");
+        if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
+            destroyCSVData(finalData);
+        }
+        free(chartData);
+        return NULL;
+    }
+
+    if (xColumnIndex < 0) {
+        logError(_logger, "X column not found for grouped aggregation");
+        if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
+            destroyCSVData(finalData);
+        }
+        free(chartData);
+        return NULL;
+    }
+
+    // --- 1. Contar valores únicos en la columna X ---
+    #define MAX_GROUPS 1024
+    char * keys[MAX_GROUPS];
+    double values[MAX_GROUPS];
+    size_t groupCount = 0;
+
+    for (size_t i = 0; i < MAX_GROUPS; i++) {
+        keys[i] = NULL;
+        values[i] = 0;
+    }
+
+    CSVRow * current = finalData->rows;
+
+    while (current != NULL) {
+
+        const char * xValue = getCellValue(current, (size_t)xColumnIndex);
+        if (xValue == NULL) {
+            current = current->next;
+            continue;
+        }
+
+        // Buscar si ya existe el grupo
+        int foundIndex = -1;
+        for (size_t i = 0; i < groupCount; i++) {
+            if (strcmp(keys[i], xValue) == 0) {
+                foundIndex = (int)i;
+                break;
+            }
+        }
+
+        // Si no existe, crear nuevo grupo
+        if (foundIndex == -1) {
+            if (groupCount >= MAX_GROUPS) {
+                logError(_logger, "Too many unique X values!");
+                break;
+            }
+            keys[groupCount] = strdup(xValue);
+            values[groupCount] = 0;
+            foundIndex = (int)groupCount;
+            groupCount++;
+        }
+
+        // Aplicar COUNT
+        if (aggFunction == AGG_COUNT) {
+            values[foundIndex] += 1;
+        }
+        else {
+            logError(_logger, "Only COUNT implemented for grouped aggregation");
+        }
+
+        current = current->next;
+    }
+
+    // --- 2. Crear el ChartData con los grupos ---
+    chartData->dataCount = groupCount;
+    chartData->labels = calloc(groupCount + 1, sizeof(char*));
+    chartData->values = calloc(groupCount, sizeof(double));
+
+    for (size_t i = 0; i < groupCount; i++) {
+        chartData->labels[i] = keys[i];
+        chartData->values[i] = values[i];
+    }
+    chartData->labels[groupCount] = NULL;
+
+    chartData->yLabel = strdup("Count");
+	
 	} else {
 		// Modo normal: evaluar expresión Y para cada fila
 		CSVRow * current = finalData->rows;
