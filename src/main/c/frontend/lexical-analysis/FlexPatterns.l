@@ -5,6 +5,8 @@
 #include "../../support/type/TokenLabel.h"
 #include "../syntactic-analysis/AbstractSyntaxTree.h"
 #include "../syntactic-analysis/BisonParser.h"
+#include <stddef.h>
+#include <string.h>
 
 }
 
@@ -26,19 +28,94 @@ extern CompilationStatus UnknownLexemeAction();
 extern CompilationStatus KeywordLexemeAction(TokenLabel label);
 extern CompilationStatus OperatorLexemeAction(TokenLabel label);
 extern CompilationStatus PunctuationLexemeAction(TokenLabel label);
-extern CompilationStatus StringLexemeAction(TokenLabel label);
-extern CompilationStatus NumberLexemeAction(TokenLabel label);
-extern CompilationStatus ColorLexemeAction(TokenLabel label);
-extern CompilationStatus IdentifierLexemeAction(TokenLabel label);
+extern CompilationStatus StringLexemeAction(const char * text, size_t length);
+extern CompilationStatus NumberLexemeAction(void);
+extern CompilationStatus ColorLexemeAction(void);
+extern CompilationStatus IdentifierLexemeAction(void);
+
+static TokenLabel _keywordLabel(const char * text) {
+	if (text == NULL) return UNKNOWN;
+	/* Palabras clave */
+	if (strcmp(text, "source") == 0) return SOURCE;
+	if (strcmp(text, "chart") == 0) return CHART;
+	if (strcmp(text, "from") == 0) return FROM;
+	if (strcmp(text, "select") == 0) return SELECT;
+	if (strcmp(text, "where") == 0) return WHERE;
+	if (strcmp(text, "filter") == 0) return FILTER;
+	if (strcmp(text, "project") == 0) return PROJECT;
+	if (strcmp(text, "aggregate") == 0) return AGGREGATE;
+	if (strcmp(text, "as") == 0) return AS;
+	if (strcmp(text, "type") == 0) return TYPE;
+	if (strcmp(text, "x") == 0) return X;
+	if (strcmp(text, "y") == 0) return Y;
+	if (strcmp(text, "colors") == 0) return COLORS;
+	if (strcmp(text, "color") == 0) return COLOR_KW;
+	if (strcmp(text, "legend") == 0) return LEGEND;
+	if (strcmp(text, "hole") == 0) return HOLE;
+	if (strcmp(text, "id") == 0) return ID_KW;
+	if (strcmp(text, "orientation") == 0) return ORIENTATION;
+	if (strcmp(text, "range") == 0) return RANGE;
+	if (strcmp(text, "title") == 0) return TITLE;
+	/* Agregaciones */
+	if (strcmp(text, "avg") == 0) return AVG;
+	if (strcmp(text, "average") == 0) return AVERAGE;
+	if (strcmp(text, "min") == 0) return MIN;
+	if (strcmp(text, "max") == 0) return MAX;
+	if (strcmp(text, "count") == 0) return COUNT;
+	if (strcmp(text, "sum") == 0) return SUM;
+	/* Tipos de chart */
+	if (strcmp(text, "pie") == 0) return PIE;
+	if (strcmp(text, "donut") == 0) return DONUT;
+	if (strcmp(text, "bar") == 0) return BAR;
+	if (strcmp(text, "scatter") == 0) return SCATTER;
+	if (strcmp(text, "line") == 0) return LINE;
+	/* Opciones de chart */
+	if (strcmp(text, "vertical") == 0) return VERTICAL;
+	if (strcmp(text, "horizontal") == 0) return HORIZONTAL;
+	if (strcmp(text, "top") == 0) return TOP;
+	if (strcmp(text, "bottom") == 0) return BOTTOM;
+	if (strcmp(text, "left") == 0) return LEFT;
+	if (strcmp(text, "right") == 0) return RIGHT;
+	if (strcmp(text, "off") == 0) return OFF;
+	return UNKNOWN;
+}
+
+static TokenLabel _arithmeticLabel(char c) {
+	switch (c) {
+		case '+': return ADD;
+		case '-': return SUB;
+		case '*': return MUL;
+		case '/': return DIV;
+		default: return UNKNOWN;
+	}
+}
+
+static TokenLabel _operatorLabel(const char * text) {
+	if (text == NULL) return UNKNOWN;
+	if (strcmp(text, ">=") == 0) return GE;
+	if (strcmp(text, "<=") == 0) return LE;
+	if (strcmp(text, "==") == 0) return EQEQ;
+	if (strcmp(text, "=") == 0) return EQ;
+	if (strcmp(text, ">") == 0) return GT;
+	if (strcmp(text, "<") == 0) return LT;
+	return UNKNOWN;
+}
+
+static TokenLabel _punctuationLabel(char c) {
+	switch (c) {
+		case ',': return COMMA;
+		case ';': return SEMI;
+		case ':': return COLON;
+		case '.': return DOT;
+		case '[': return LBRACK;
+		case ']': return RBRACK;
+		default: return UNKNOWN;
+	}
+}
 
 %}
 
 /* === Opciones generales === */
-%option noyywrap
-%option nounput
-%option noinput
-%option caseless
-
 /* === Contextos === */
 
 %x IMPORT_EXPRESSION
@@ -46,12 +123,16 @@ extern CompilationStatus IdentifierLexemeAction(TokenLabel label);
 
 /* === Patrones reutilizables === */
 
-whitespace          [[:space:]]+
+WHITESPACE_PATTERN  [[:space:]]+
 IDENTIFIER_PATTERN  [a-zA-Z_][a-zA-Z0-9_]*
 STRING_PATTERN      \"[^\"]*\"
 NUMBER_PATTERN      [0-9]+\.[0-9]+
 INTEGER_PATTERN     [0-9]+
 COLOR_PATTERN       #[0-9a-fA-F]{6}
+KEYWORD_PATTERN     (source|chart|from|select|where|filter|project|aggregate|as|type|x|y|colors|color|legend|hole|id|orientation|range|title|avg|average|min|max|count|sum|pie|donut|bar|scatter|line|vertical|horizontal|top|bottom|left|right|off)
+ARITHMETIC_PATTERN  [+\-*/]
+OPERATOR_PATTERN    (>=|<=|==|=|>|<)
+PUNCTUATION_PATTERN ([,;:\.\[\]])
 
 %%
 
@@ -63,108 +144,31 @@ COLOR_PATTERN       #[0-9a-fA-F]{6}
 
 %}
 
-"{"									{ return EnterImportExpressionLexemeAction(IMPORT_EXPRESSION); }
-<IMPORT_EXPRESSION>[^{}]+			{ return SubexpressionLexemeAction(); }
-<IMPORT_EXPRESSION>"}"				{ return LeaveImportExpressionLexemeAction(); }
-<IMPORT_EXPRESSION>.				{ return UnknownLexemeAction(); }
+"{"                                 { return EnterImportExpressionLexemeAction(IMPORT_EXPRESSION); }
+<IMPORT_EXPRESSION>[^{}]+           { return SubexpressionLexemeAction(); }
+<IMPORT_EXPRESSION>"}"              { return LeaveImportExpressionLexemeAction(); }
+<IMPORT_EXPRESSION>.                { return UnknownLexemeAction(); }
 
-"/*"								{ return EnterMultilineCommentLexemeAction(MULTILINE_COMMENT); }
-<MULTILINE_COMMENT>"*/"				{ return LeaveMultilineCommentLexemeAction(); }
-<MULTILINE_COMMENT>[^*]+			{ return IgnoredLexemeAction(); }
-<MULTILINE_COMMENT>.				{ return IgnoredLexemeAction(); }
-
-
+"/*"                                { return EnterMultilineCommentLexemeAction(MULTILINE_COMMENT); }
+<MULTILINE_COMMENT>"*/"             { return LeaveMultilineCommentLexemeAction(); }
+<MULTILINE_COMMENT>[^*]+            { return IgnoredLexemeAction(); }
+<MULTILINE_COMMENT>.                { return IgnoredLexemeAction(); }
 
 
-
-"source"        { return KeywordLexemeAction(SOURCE); }
-"chart"         { return KeywordLexemeAction(CHART); }
-"from"          { return KeywordLexemeAction(FROM); }
-"filter"        { return KeywordLexemeAction(FILTER); }
-"project"       { return KeywordLexemeAction(PROJECT); }
-"aggregate"     { return KeywordLexemeAction(AGGREGATE); }
-"as"            { return KeywordLexemeAction(AS); }
-"type"          { return KeywordLexemeAction(TYPE); }
-"x"             { return KeywordLexemeAction(X); }
-"y"             { return KeywordLexemeAction(Y); }
-"colors"        { return KeywordLexemeAction(COLORS); }
-"color"         { return KeywordLexemeAction(COLOR_KW); }
-"legend"        { return KeywordLexemeAction(LEGEND); }
-"hole"          { return KeywordLexemeAction(HOLE); }
-"id"            { return KeywordLexemeAction(ID_KW); }
-"orientation"   { return KeywordLexemeAction(ORIENTATION); }
-"range"         { return KeywordLexemeAction(RANGE); }
-"title"         { return KeywordLexemeAction(TITLE); }
-
-"avg"           { return KeywordLexemeAction(AVG); }
-"average"       { return KeywordLexemeAction(AVERAGE); }
-"min"           { return KeywordLexemeAction(MIN); }
-"max"           { return KeywordLexemeAction(MAX); }
-"count"         { return KeywordLexemeAction(COUNT); }
-"sum"           { return KeywordLexemeAction(SUM); }
-
-"pie"           { return KeywordLexemeAction(PIE); }
-"donut"         { return KeywordLexemeAction(DONUT); }
-"bar"           { return KeywordLexemeAction(BAR); }
-"scatter"       { return KeywordLexemeAction(SCATTER); }
-"line"          { return KeywordLexemeAction(LINE); }
-
-"vertical"      { return KeywordLexemeAction(VERTICAL); }
-"horizontal"    { return KeywordLexemeAction(HORIZONTAL); }
-"top"           { return KeywordLexemeAction(TOP); }
-"bottom"        { return KeywordLexemeAction(BOTTOM); }
-"left"          { return KeywordLexemeAction(LEFT); }
-"right"         { return KeywordLexemeAction(RIGHT); }
-"off"           { return KeywordLexemeAction(OFF); }
-
-
-
-
-
-
-">="            { return OperatorLexemeAction(GE); }
-"<="            { return OperatorLexemeAction(LE); }
-"=="            { return OperatorLexemeAction(EQEQ); }
-"="             { return OperatorLexemeAction(EQ); }
-">"             { return OperatorLexemeAction(GT); }
-"<"             { return OperatorLexemeAction(LT); }
-"+"             { return ArithmeticOperatorLexemeAction(ADD); }
-"-"             { return ArithmeticOperatorLexemeAction(SUB); }
-"*"             { return ArithmeticOperatorLexemeAction(MUL); }
-"/"             { return ArithmeticOperatorLexemeAction(DIV); }
-
-","             { return PunctuationLexemeAction(COMMA); }
-";"             { return PunctuationLexemeAction(SEMI); }
-":"             { return PunctuationLexemeAction(COLON); }
-"."             { return PunctuationLexemeAction(DOT); }
-"["             { return PunctuationLexemeAction(LBRACK); }
-"]"             { return PunctuationLexemeAction(RBRACK); }
+{KEYWORD_PATTERN}   { TokenLabel label = _keywordLabel(yytext); return label == UNKNOWN ? UnknownLexemeAction() : KeywordLexemeAction(label); }
+{OPERATOR_PATTERN}      { TokenLabel label = _operatorLabel(yytext); return label == UNKNOWN ? UnknownLexemeAction() : OperatorLexemeAction(label); }
+{ARITHMETIC_PATTERN}    { TokenLabel label = _arithmeticLabel(yytext[0]); return label == UNKNOWN ? UnknownLexemeAction() : ArithmeticOperatorLexemeAction(label); }
+{PUNCTUATION_PATTERN}   { TokenLabel label = _punctuationLabel(yytext[0]); return label == UNKNOWN ? UnknownLexemeAction() : PunctuationLexemeAction(label); }
 "("             { return ParenthesisLexemeAction(OPEN_PARENTHESIS); }
 ")"             { return ParenthesisLexemeAction(CLOSE_PARENTHESIS); }
 
 
-
-
-
-
-{STRING_PATTERN}    { return StringLexemeAction(STRING); }
-{NUMBER_PATTERN}    { return NumberLexemeAction(NUMBER); }
-{INTEGER_PATTERN}   { return IntegerLexemeAction(); }
-{COLOR_PATTERN}     { return ColorLexemeAction(COLOR); }
-
-
-
-
-
-{IDENTIFIER_PATTERN}    { return IdentifierLexemeAction(IDENTIFIER); }
-
-
-
-
-
-{whitespace}        { return IgnoredLexemeAction(); }
-
-
+{STRING_PATTERN}        { return StringLexemeAction(yytext + 1, yyleng >= 2 ? (size_t)(yyleng - 2) : 0); }
+{NUMBER_PATTERN}        { return NumberLexemeAction(); }
+{INTEGER_PATTERN}       { return IntegerLexemeAction(); }
+{COLOR_PATTERN}         { return ColorLexemeAction(); }
+{IDENTIFIER_PATTERN}    { return IdentifierLexemeAction(); }
+{WHITESPACE_PATTERN}    { return IgnoredLexemeAction(); }
 
 
 

@@ -1,3 +1,5 @@
+%type <filterOperator> comparison_op
+%type <stringValue> filter_value
 %{
 
 #include "../../support/type/TokenLabel.h"
@@ -7,6 +9,88 @@
 
 void yyerror(const YYLTYPE * location, const char * message) {
     fprintf(stderr, "Parse error at line %d: %s\n", location->first_line, message);
+}
+
+static void freeStringArray(char ** array) {
+    if (array == NULL) {
+        return;
+    }
+    for (size_t i = 0; array[i] != NULL; ++i) {
+        free(array[i]);
+    }
+    free(array);
+}
+
+static char ** duplicateStringArray(char ** array, size_t count) {
+    if (count == 0 || array == NULL) {
+        return NULL;
+    }
+    char ** copy = calloc(count + 1, sizeof(char *));
+    if (copy == NULL) {
+        return NULL;
+    }
+    for (size_t i = 0; i < count; ++i) {
+        if (array[i] != NULL) {
+            copy[i] = strdup(array[i]);
+            if (copy[i] == NULL) {
+                freeStringArray(copy);
+                return NULL;
+            }
+        }
+    }
+    copy[count] = NULL;
+    return copy;
+}
+
+static Projection * buildProjectionFromList(char ** list) {
+    size_t count = 0;
+    if (list != NULL) {
+        while (list[count] != NULL) count++;
+    }
+    char ** copiedColumns = duplicateStringArray(list, count);
+    Projection * projection = ProjectionSemanticAction(copiedColumns, count);
+    if (projection == NULL) {
+        freeStringArray(copiedColumns);
+    }
+    return projection;
+}
+
+static SourceOptions * mergeSourceOptions(SourceOptions * base, SourceOptions * extra) {
+    if (base == NULL) return extra;
+    if (extra == NULL) return base;
+    if (extra->filters != NULL) {
+        base->filters = appendFilterCondition(base->filters, extra->filters);
+    }
+    if (extra->projection != NULL) {
+        if (base->projection != NULL) {
+            destroyProjection(base->projection);
+        }
+        base->projection = extra->projection;
+    }
+    free(extra);
+    return base;
+}
+
+static Statement * buildSourceStatement(char * identifier, char * csvFile, char * sourceId, SourceOptions * options) {
+    FilterCondition * filters = options ? options->filters : NULL;
+    Projection * projection = options ? options->projection : NULL;
+    Source * source = SourceSemanticAction(identifier, csvFile, sourceId, filters, projection);
+    if (options != NULL) {
+        free(options);
+    }
+    if (source == NULL) {
+        destroyFilterCondition(filters);
+        destroyProjection(projection);
+        if (identifier != NULL) free(identifier);
+        if (csvFile != NULL) free(csvFile);
+        if (sourceId != NULL) free(sourceId);
+        return NULL;
+    }
+    Statement * stmt = createSourceStatement(source);
+    if (stmt == NULL) {
+        destroySource(source);
+    }
+    return stmt;
 }
 
 %}
@@ -38,6 +122,8 @@ void yyerror(const YYLTYPE * location, const char * message) {
     char ** stringArray;
     size_t sizeValue;
     double * rangeValue;  // Array de 2 doubles [min, max]
+    SourceOptions * sourceOptions;
+
 }
 
 %destructor { destroyConstant($$); } <constant>
@@ -48,23 +134,6 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %destructor { destroyChart($$); } <chart>
 %destructor { destroyFilterCondition($$); } <filterCondition>
 %destructor { destroyProjection($$); } <projection>
-%destructor { free($$); } <stringValue>
-%destructor { free($$); } <colorValue>
-%destructor { free($$); } <rangeValue>
-%destructor { 
-    // Liberar los strings dentro del array primero, luego el array
-    // Los strings son stringValue que tienen destructor, pero cuando están en un array
-    // Bison no los destruye automáticamente, así que debemos liberarlos manualmente
-    if ($$ != NULL) {
-        char ** arr = (char **)$$;
-        size_t i = 0;
-        while (arr[i] != NULL) {
-            free(arr[i]);
-            i++;
-        }
-        free(arr);
-    }
-} <stringArray>
 
 %token <integer> INTEGER
 %token <token> ADD SUB MUL DIV OPEN_PARENTHESIS CLOSE_PARENTHESIS OPEN_BRACE CLOSE_BRACE OPEN_COMMENT CLOSE_COMMENT
@@ -96,15 +165,17 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %type <stringArray> color_list
 %type <chart> chart_body
 %type <filterCondition> filter_clause
+%type <token> filter_kw
 %type <projection> project_clause
 %type <chartType> chart_type
 %type <token> orientation legend_position
 %type <source> required_from
 %type <stringValue> required_x
 %type <expression> required_y
-%type <token> optional_options optional_option opt_comma opt_semi orientation_option colors_option color_option legend_option hole_option id_option range_option x_range_option y_range_option
+%type <token> optional_option opt_comma opt_semi orientation_option colors_option color_option legend_option hole_option id_option range_option x_range_option y_range_option
 %type <numberValue> number_literal
 %type <rangeValue> range_values
+%type <sourceOptions> source_options source_option
 
 %%
 
@@ -135,128 +206,46 @@ stmt: source_decl                      { $$ = $1; }
     | chart_decl                       { $$ = $1; }
     ;
 
-source_decl: SOURCE IDENTIFIER EQ FROM STRING SEMI { 
-               Source * s = SourceSemanticAction($2, $5, NULL, NULL, NULL);
-               $$ = createSourceStatement(s);
+source_decl: SOURCE IDENTIFIER EQ FROM STRING source_options SEMI {
+               /* Tomamos ownership directo de los lexemas del lexer */
+               $$ = buildSourceStatement($2, $5, NULL, $6);
              }
-           | SOURCE IDENTIFIER EQ FROM IDENTIFIER SEMI { 
-               Source * s = SourceSemanticAction($2, NULL, $5, NULL, NULL);
-               $$ = createSourceStatement(s);
-             }
-           | SOURCE IDENTIFIER EQ FROM STRING filter_clause SEMI { 
-               Source * s = SourceSemanticAction($2, $5, NULL, $6, NULL);
-               $$ = createSourceStatement(s);
-             }
-           | SOURCE IDENTIFIER EQ FROM IDENTIFIER filter_clause SEMI { 
-               Source * s = SourceSemanticAction($2, NULL, $5, $6, NULL);
-               $$ = createSourceStatement(s);
-             }
-           | SOURCE IDENTIFIER EQ FROM STRING project_clause SEMI { 
-               Source * s = SourceSemanticAction($2, $5, NULL, NULL, $6);
-               $$ = createSourceStatement(s);
-             }
-           | SOURCE IDENTIFIER EQ FROM IDENTIFIER project_clause SEMI { 
-               Source * s = SourceSemanticAction($2, NULL, $5, NULL, $6);
-               $$ = createSourceStatement(s);
-             }
-           | SOURCE IDENTIFIER EQ FROM STRING filter_clause project_clause SEMI { 
-               Source * s = SourceSemanticAction($2, $5, NULL, $6, $7);
-               if (s == NULL) {
-                   $$ = NULL;
-               } else {
-                   $$ = createSourceStatement(s);
-               }
-             }
-           | SOURCE IDENTIFIER EQ FROM IDENTIFIER filter_clause project_clause SEMI { 
-               Source * s = SourceSemanticAction($2, NULL, $5, $6, $7);
-               $$ = createSourceStatement(s);
-             }
-           | SOURCE IDENTIFIER EQ FROM STRING project_clause filter_clause SEMI { 
-               Source * s = SourceSemanticAction($2, $5, NULL, $7, $6);
-               $$ = createSourceStatement(s);
-             }
-           | SOURCE IDENTIFIER EQ FROM IDENTIFIER project_clause filter_clause SEMI { 
-               Source * s = SourceSemanticAction($2, NULL, $5, $7, $6);
-               $$ = createSourceStatement(s);
+           | SOURCE IDENTIFIER EQ FROM IDENTIFIER source_options SEMI {
+               /* Tomamos ownership directo de los lexemas del lexer */
+               $$ = buildSourceStatement($2, NULL, $5, $6);
              }
            ;
 
-filter_clause: FILTER STRING EQEQ STRING    { $$ = FilterConditionSemanticAction($2, EQEQ, $4); }
-             | FILTER STRING GT STRING       { $$ = FilterConditionSemanticAction($2, GT, $4); }
-             | FILTER STRING LT STRING       { $$ = FilterConditionSemanticAction($2, LT, $4); }
-             | FILTER STRING GE STRING       { $$ = FilterConditionSemanticAction($2, GE, $4); }
-             | FILTER STRING LE STRING       { $$ = FilterConditionSemanticAction($2, LE, $4); }
-             | FILTER STRING GT INTEGER      { $$ = FilterConditionIntSemanticAction($2, GT, $4); }
-             | FILTER STRING LT INTEGER      { $$ = FilterConditionIntSemanticAction($2, LT, $4); }
-             | FILTER STRING GE INTEGER      { $$ = FilterConditionIntSemanticAction($2, GE, $4); }
-             | FILTER STRING LE INTEGER      { $$ = FilterConditionIntSemanticAction($2, LE, $4); }
-             | FILTER STRING EQEQ INTEGER    { $$ = FilterConditionIntSemanticAction($2, EQEQ, $4); }
-             | FILTER IDENTIFIER EQEQ STRING { $$ = FilterConditionSemanticAction($2, EQEQ, $4); }
-             | FILTER IDENTIFIER GT STRING   { $$ = FilterConditionSemanticAction($2, GT, $4); }
-             | FILTER IDENTIFIER LT STRING   { $$ = FilterConditionSemanticAction($2, LT, $4); }
-             | FILTER IDENTIFIER GE STRING   { $$ = FilterConditionSemanticAction($2, GE, $4); }
-             | FILTER IDENTIFIER LE STRING   { $$ = FilterConditionSemanticAction($2, LE, $4); }
-             | FILTER IDENTIFIER GT INTEGER  { $$ = FilterConditionIntSemanticAction($2, GT, $4); }
-             | FILTER IDENTIFIER LT INTEGER  { $$ = FilterConditionIntSemanticAction($2, LT, $4); }
-             | FILTER IDENTIFIER GE INTEGER  { $$ = FilterConditionIntSemanticAction($2, GE, $4); }
-             | FILTER IDENTIFIER LE INTEGER  { $$ = FilterConditionIntSemanticAction($2, LE, $4); }
-             | FILTER IDENTIFIER EQEQ INTEGER { $$ = FilterConditionIntSemanticAction($2, EQEQ, $4); }
+comparison_op: EQEQ { $$ = EQEQ; }
+                         | GT  { $$ = GT; }
+                         | LT  { $$ = LT; }
+                         | GE  { $$ = GE; }
+                         | LE  { $$ = LE; }
+
+filter_value: STRING { $$ = $1; } | IDENTIFIER { $$ = $1; };
+
+filter_kw: FILTER { $$ = FILTER; } | WHERE { $$ = WHERE; };
+
+filter_clause:
+        filter_kw filter_value comparison_op filter_value { $$ = FilterConditionSemanticAction($2, $3, $4); }
+    |   filter_kw filter_value comparison_op INTEGER     { $$ = FilterConditionIntSemanticAction($2, $3, $4); }
+;
+
+source_options: /* empty */ { $$ = NULL; }
+              | source_options source_option { $$ = mergeSourceOptions($1, $2); }
+              ;
+
+source_option: filter_clause    { $$ = createSourceOptions($1, NULL); }
+             | project_clause   { $$ = createSourceOptions(NULL, $1); }
              ;
 
 project_clause: PROJECT LBRACK string_list RBRACK { 
-                                                   size_t count = 0;
-                                                   if ($3 != NULL) {
-                                                       while ($3[count] != NULL) count++;
-                                                   }
-                                                   // Hacer copias de los strings antes de pasar a ProjectionSemanticAction
-                                                   // para evitar problemas con destructores de Bison
-                                                   char ** copiedColumns = NULL;
-                                                   if ($3 != NULL && count > 0) {
-                                                       copiedColumns = calloc(count + 1, sizeof(char*));
-                                                       if (copiedColumns != NULL) {
-                                                           for (size_t i = 0; i < count; ++i) {
-                                                               if ($3[i] != NULL) {
-                                                                   copiedColumns[i] = strdup($3[i]);
-                                                                   if (copiedColumns[i] == NULL) {
-                                                                       // Si falla strdup, liberar lo que ya se copió
-                                                                       for (size_t j = 0; j < i; ++j) {
-                                                                           free(copiedColumns[j]);
-                                                                       }
-                                                                       free(copiedColumns);
-                                                                       copiedColumns = NULL;
-                                                                       break;
-                                                                   }
-                                                               } else {
-                                                                   copiedColumns[i] = NULL;
-                                                               }
-                                                           }
-                                                           if (copiedColumns != NULL) {
-                                                               copiedColumns[count] = NULL;
-                                                           }
-                                                       }
-                                                   }
-                                                   // Liberar manualmente el string_list original después de copiar los strings
-                                                   // Los strings dentro del array necesitan ser liberados antes de liberar el array
-                                                   if ($3 != NULL) {
-                                                       size_t i = 0;
-                                                       while ($3[i] != NULL) {
-                                                           free($3[i]);
-                                                           i++;
-                                                       }
-                                                       free($3);
-                                                   }
-                                                   $$ = ProjectionSemanticAction(copiedColumns, count);
-                                                   if ($$ == NULL) {
-                                                       // Liberar las copias si falló
-                                                       if (copiedColumns != NULL) {
-                                                           for (size_t i = 0; i < count; ++i) {
-                                                               if (copiedColumns[i] != NULL) {
-                                                                   free(copiedColumns[i]);
-                                                               }
-                                                           }
-                                                           free(copiedColumns);
-                                                       }
-                                                   }
+                                                   $$ = buildProjectionFromList($3);
+                                                   freeStringArray($3);
+                                                 }
+              | SELECT LBRACK string_list RBRACK {
+                                                   $$ = buildProjectionFromList($3);
+                                                   freeStringArray($3);
                                                  }
               ;
 
@@ -388,15 +377,7 @@ from_source: STRING {
                        }
                        i++;
                    }
-                   // Liberar manualmente el string_list original después de copiar los strings
-                   if ($2 != NULL) {
-                       size_t j = 0;
-                       while ($2[j] != NULL) {
-                           free($2[j]);
-                           j++;
-                       }
-                       free($2);
-                   }
+                   freeStringArray($2);
                }
                $$ = first;
              }
@@ -411,10 +392,6 @@ string_or_identifier: STRING { $$ = $1; }
 
 required_y: Y EQ expression opt_comma { $$ = $3; }
           ;
-
-optional_options: /* empty */ { $$ = 0; }
-                | optional_options optional_option { $$ = 0; }
-                ;
 
 optional_option: orientation_option
                | colors_option
@@ -439,15 +416,7 @@ colors_option: COLORS EQ LBRACK color_list RBRACK opt_comma {
                    while ($4[count] != NULL) count++;
                }
                SetChartColors($4, count);
-               // Liberar el array de colores y los strings (serán copiados por SetChartColors)
-               if ($4 != NULL) {
-                   size_t i = 0;
-                   while ($4[i] != NULL) {
-                       free($4[i]);
-                       i++;
-                   }
-                   free($4);
-               }
+               freeStringArray($4);
                $$ = 0;
              }
              ;
@@ -475,7 +444,12 @@ hole_option: HOLE EQ number_literal opt_comma {
 id_option: ID_KW EQ string_or_identifier opt_comma { SetChartId($3); $$ = 0; }
          ;
 
-range_option: RANGE EQ range_values opt_comma { $$ = 0; }
+range_option: RANGE EQ range_values opt_comma { 
+                if ($3 != NULL) {
+                    free($3);
+                }
+                $$ = 0;
+              }
             ;
 
 x_range_option: X DOT RANGE EQ range_values opt_comma { 

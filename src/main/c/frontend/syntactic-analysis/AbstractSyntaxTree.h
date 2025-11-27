@@ -34,6 +34,7 @@ typedef struct Projection Projection;
 typedef struct Source Source;
 typedef struct Chart Chart;
 typedef struct Statement Statement;
+typedef struct SourceOptions SourceOptions;
 
 /**
  * Node types for the Abstract Syntax Tree (AST).
@@ -184,6 +185,11 @@ struct Statement {
 	struct Statement * next;        // Lista de statements
 };
 
+struct SourceOptions {
+	FilterCondition * filters;
+	Projection * projection;
+};
+
 // Program extendido
 struct Program {
 	Statement * statements;          // Lista de sources y charts
@@ -222,12 +228,15 @@ Program * createProgramFromExpression(Expression * expression);
 // Nuevos constructores para DSL de gráficos
 FilterCondition * createFilterCondition(char * columnName, FilterOperator op, char * stringValue);
 FilterCondition * createFilterConditionInt(char * columnName, FilterOperator op, int intValue);
+FilterCondition * appendFilterCondition(FilterCondition * head, FilterCondition * tail);
 Projection * createProjection(char ** columns, size_t columnCount);
 Source * createSource(char * identifier, char * csvFile, char * sourceIdentifier, FilterCondition * filters, Projection * projection);
 Chart * createChart(char * title, ChartType type, Source * sources, char * xColumn, Expression * yExpression, char * yAlias);
 Statement * createSourceStatement(Source * source);
 Statement * createChartStatement(Chart * chart);
 Program * createProgramFromStatements(Statement * statements);
+
+SourceOptions * createSourceOptions(FilterCondition * filters, Projection * projection);
 
 // Funciones de debugging para imprimir el AST
 void printAST(Program * program);

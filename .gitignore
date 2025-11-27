@@ -7,6 +7,7 @@
 /.vs/
 /.vscode/
 /bin/
+/build/
 /cache/
 /log/
 /node_modules/

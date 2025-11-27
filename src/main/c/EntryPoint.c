@@ -41,7 +41,23 @@ const int main(const int length, const char ** arguments) {
 	};
 	CompilationStatus compilationStatus = executeSyntacticAnalysis();
 	Program * program = compilerState.abstractSyntaxtTree;
-	
+
+	if (compilationStatus == SUCCEEDED && program != NULL) {
+		/* Validaciones semánticas adicionales (duplicados, etc.) */
+		const bool semanticValidationOk = ValidateProgramSemantics(program);
+		const size_t semanticErrorCount = bisonSemanticErrorCount();
+		const char * const * semanticErrors = bisonSemanticErrors();
+		if (semanticErrorCount > 0 && semanticErrors != NULL) {
+			logError(logger, "Semantic errors detected (%zu):", semanticErrorCount);
+			for (size_t i = 0; i < semanticErrorCount; ++i) {
+				logError(logger, "  %s", semanticErrors[i]);
+			}
+		}
+		if (!semanticValidationOk || semanticErrorCount > 0) {
+			compilationStatus = FAILED;
+		}
+	}
+
 	if (compilationStatus == SUCCEEDED && program != NULL) {
 		printAST(program);
 	}

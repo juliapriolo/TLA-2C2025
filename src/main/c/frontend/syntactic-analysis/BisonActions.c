@@ -1,4 +1,5 @@
 #include "BisonActions.h"
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -6,11 +7,13 @@
 
 static CompilerState * _compilerState = NULL;
 static Logger * _logger = NULL;
-static bool _semanticErrorDetected = false;
 static char ** _sourceIdentifiers = NULL;
 static size_t _sourceIdentifiersCount = 0;
 static Chart * _currentChart = NULL;  // Chart actual mientras se procesan opciones
 static char * _pendingYAlias = NULL;  // Alias Y pendiente de asignar al chart cuando se cree
+static char ** _semanticErrors = NULL;
+static size_t _semanticErrorsCount = 0;
+static size_t _semanticErrorsCapacity = 0;
 
 static void _clearSourceIdentifiers(void) {
 	if (_sourceIdentifiers != NULL) {
@@ -21,6 +24,18 @@ static void _clearSourceIdentifiers(void) {
 		_sourceIdentifiers = NULL;
 	}
 	_sourceIdentifiersCount = 0;
+}
+
+static void _clearSemanticErrors(void) {
+	if (_semanticErrors != NULL) {
+		for (size_t i = 0; i < _semanticErrorsCount; ++i) {
+			free(_semanticErrors[i]);
+		}
+		free(_semanticErrors);
+		_semanticErrors = NULL;
+	}
+	_semanticErrorsCount = 0;
+	_semanticErrorsCapacity = 0;
 }
 
 static bool _sourceIdentifierExists(const char * identifier) {
@@ -59,6 +74,52 @@ static void _rememberSourceIdentifier(const char * identifier) {
 	++_sourceIdentifiersCount;
 }
 
+static void _registerSemanticError(const char * format, ...) {
+	if (format == NULL) {
+		return;
+	}
+	va_list args;
+	va_start(args, format);
+	va_list argsCopy;
+	va_copy(argsCopy, args);
+	int required = vsnprintf(NULL, 0, format, argsCopy);
+	va_end(argsCopy);
+	if (required < 0) {
+		va_end(args);
+		return;
+	}
+	char * message = (char *) calloc((size_t) required + 1, sizeof(char));
+	if (message == NULL) {
+		if (_logger) {
+			logError(_logger, "Out of memory while saving semantic error.");
+		}
+		va_end(args);
+		return;
+	}
+	vsnprintf(message, (size_t) required + 1, format, args);
+	va_end(args);
+
+	if (_semanticErrorsCount == _semanticErrorsCapacity) {
+		size_t newCapacity = _semanticErrorsCapacity == 0 ? 4 : _semanticErrorsCapacity * 2;
+		char ** resized = (char **) realloc(_semanticErrors, newCapacity * sizeof(char *));
+		if (resized == NULL) {
+			if (_logger) {
+				logError(_logger, "Out of memory while tracking semantic errors.");
+			}
+			free(message);
+			return;
+		}
+		_semanticErrors = resized;
+		_semanticErrorsCapacity = newCapacity;
+	}
+
+	_semanticErrors[_semanticErrorsCount++] = message;
+
+	if (_logger) {
+		logError(_logger, "%s", message);
+	}
+}
+
 /** Shutdown module's internal state. */
 void _shutdownBisonActionsModule() {
 	if (_logger != NULL) {
@@ -67,7 +128,7 @@ void _shutdownBisonActionsModule() {
 		_logger = NULL;
 	}
 	_clearSourceIdentifiers();
-	_semanticErrorDetected = false;
+	_clearSemanticErrors();
 	_compilerState = NULL;
 	// Liberar alias pendiente si existe
 	if (_pendingYAlias != NULL) {
@@ -80,7 +141,7 @@ ModuleDestructor initializeBisonActionsModule(CompilerState * compilerState) {
 	_compilerState = compilerState;
 	_logger = createLogger("BisonActions");
 	_clearSourceIdentifiers();
-	_semanticErrorDetected = false;
+	_clearSemanticErrors();
 	return _shutdownBisonActionsModule;
 }
 
@@ -238,10 +299,7 @@ Source * SourceSemanticAction(char * identifier, char * csvFile, char * sourceId
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	if (identifier != NULL) {
 		if (_sourceIdentifierExists(identifier)) {
-			_semanticErrorDetected = true;
-			if (_logger) {
-				logError(_logger, "Duplicate source identifier \"%s\".", identifier);
-			}
+			_registerSemanticError("Duplicate source identifier \"%s\".", identifier);
 			return NULL;
 		} else {
 			_rememberSourceIdentifier(identifier);
@@ -249,10 +307,7 @@ Source * SourceSemanticAction(char * identifier, char * csvFile, char * sourceId
 	}
 	// Validar que si se usa sourceIdentifier, ese source existe
 	if (sourceIdentifier != NULL && !_sourceIdentifierExists(sourceIdentifier)) {
-		_semanticErrorDetected = true;
-		if (_logger) {
-			logError(_logger, "Source identifier \"%s\" not found.", sourceIdentifier);
-		}
+		_registerSemanticError("Source identifier \"%s\" not found.", sourceIdentifier);
 		return NULL;
 	}
 	return createSource(identifier, csvFile, sourceIdentifier, filters, projection);
@@ -262,10 +317,7 @@ Chart * ChartSemanticAction(char * title, ChartType type, Source * sources, char
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	// Validar que el chart tenga al menos un source
 	if (sources == NULL) {
-		_semanticErrorDetected = true;
-		if (_logger) {
-			logError(_logger, "Chart must have at least one source.");
-		}
+		_registerSemanticError("Chart must have at least one source.");
 		return NULL;
 	}
 	return createChart(title, type, sources, xColumn, yExpression, yAlias);
@@ -275,18 +327,12 @@ Statement * SourceStatementSemanticAction(char * sourceId, char * csvFile, char 
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Source * source = SourceSemanticAction(sourceId, csvFile, sourceIdentifier, filters, projection);
 	if (source == NULL) {
-		_semanticErrorDetected = true;
-		if (_logger) {
-			logError(_logger, "Failed to create source node.");
-		}
+		_registerSemanticError("Failed to create source node.");
 		return NULL;
 	}
 	Statement * stmt = createSourceStatement(source);
 	if (stmt == NULL) {
-		_semanticErrorDetected = true;
-		if (_logger) {
-			logError(_logger, "Failed to create source statement.");
-		}
+		_registerSemanticError("Failed to create source statement.");
 		destroySource(source);
 		return NULL;
 	}
@@ -297,18 +343,12 @@ Statement * ChartStatementSemanticAction(char * title, ChartType type, Source * 
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Chart * chart = ChartSemanticAction(title, type, sources, xColumn, yExpression, yAlias);
 	if (chart == NULL) {
-		_semanticErrorDetected = true;
-		if (_logger) {
-			logError(_logger, "Failed to create chart node.");
-		}
+		_registerSemanticError("Failed to create chart node.");
 		return NULL;
 	}
 	Statement * stmt = createChartStatement(chart);
 	if (stmt == NULL) {
-		_semanticErrorDetected = true;
-		if (_logger) {
-			logError(_logger, "Failed to create chart statement.");
-		}
+		_registerSemanticError("Failed to create chart statement.");
 		destroyChart(chart);
 		return NULL;
 	}
@@ -325,10 +365,7 @@ Program * ProgramFromStatementsSemanticAction(Statement * statements) {
 			program->statements = statements;
 			program->expression = NULL;
 		} else {
-			_semanticErrorDetected = true;
-			if (_logger) {
-				logError(_logger, "Out of memory while creating program.");
-			}
+			_registerSemanticError("Out of memory while creating program.");
 		}
 	}
 	if (program != NULL) {
@@ -477,6 +514,71 @@ void SetChartHole(double hole) {
 	}
 }
 
+const char * const * bisonSemanticErrors(void) {
+	return (const char * const *) _semanticErrors;
+}
+
+size_t bisonSemanticErrorCount(void) {
+	return _semanticErrorsCount;
+}
+
 bool bisonHasSemanticErrors(void) {
-	return _semanticErrorDetected;
+	return _semanticErrorsCount > 0;
+}
+
+bool ValidateProgramSemantics(Program * program) {
+	bool ok = !bisonHasSemanticErrors();
+	if (program == NULL || program->statements == NULL) {
+		return ok;
+	}
+
+	/* Verificar IDs duplicados en charts */
+	size_t idCount = 0;
+	size_t idCapacity = 4;
+	char ** seenIds = (char **) calloc(idCapacity, sizeof(char *));
+	if (seenIds == NULL) {
+		_registerSemanticError("Out of memory while validating chart identifiers.");
+		return false;
+	}
+
+	Statement * stmt = program->statements;
+	while (stmt != NULL) {
+		if (stmt->type == STMT_CHART && stmt->chart != NULL && stmt->chart->id != NULL) {
+			const char * currentId = stmt->chart->id;
+			bool duplicateFound = false;
+			for (size_t i = 0; i < idCount; ++i) {
+				if (seenIds[i] != NULL && strcmp(seenIds[i], currentId) == 0) {
+					_registerSemanticError("Duplicate chart identifier \"%s\".", currentId);
+					ok = false;
+					duplicateFound = true;
+					break;
+				}
+			}
+			if (!duplicateFound) {
+				if (idCount == idCapacity) {
+					size_t newCapacity = idCapacity * 2;
+					char ** resized = (char **) realloc(seenIds, newCapacity * sizeof(char *));
+					if (resized == NULL) {
+						_registerSemanticError("Out of memory while tracking chart identifiers.");
+						ok = false;
+						break;
+					}
+					seenIds = resized;
+					/* Inicializar nuevos slots */
+					for (size_t j = idCapacity; j < newCapacity; ++j) {
+						seenIds[j] = NULL;
+					}
+					idCapacity = newCapacity;
+				}
+				seenIds[idCount++] = (char *) currentId;
+			}
+		}
+		stmt = stmt->next;
+	}
+
+	if (seenIds != NULL) {
+		free(seenIds);
+	}
+
+	return ok && !bisonHasSemanticErrors();
 }

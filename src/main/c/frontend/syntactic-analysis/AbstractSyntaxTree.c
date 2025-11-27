@@ -163,32 +163,37 @@ void destroyFactor(Factor * factor) {
 FilterCondition * createFilterCondition(char * columnName, FilterOperator op, char * stringValue) {
 	FilterCondition * fc = calloc(1, sizeof(FilterCondition));
 	if (!fc) return NULL;
-	// Copiar los strings para evitar problemas con destructores de Bison
-	fc->columnName = columnName != NULL ? strdup(columnName) : NULL;
+	/* Tomar ownership directo de los strings del lexer */
+	fc->columnName = columnName;
 	fc->operator = op;
 	fc->valueType = FILTER_VALUE_STRING;
-	fc->value.stringValue = stringValue != NULL ? strdup(stringValue) : NULL;
+	fc->value.stringValue = stringValue;
 	fc->next = NULL;
-	// Si falla alguna copia, liberar lo que se copió y retornar NULL
-	if ((columnName != NULL && fc->columnName == NULL) || 
-	    (stringValue != NULL && fc->value.stringValue == NULL)) {
-		if (fc->columnName != NULL) free(fc->columnName);
-		if (fc->value.stringValue != NULL) free(fc->value.stringValue);
-		free(fc);
-		return NULL;
-	}
 	return fc;
 }
 
 FilterCondition * createFilterConditionInt(char * columnName, FilterOperator op, int intValue) {
 	FilterCondition * fc = calloc(1, sizeof(FilterCondition));
 	if (!fc) return NULL;
+	/* Tomar ownership directo de los strings del lexer */
 	fc->columnName = columnName;
 	fc->operator = op;
 	fc->valueType = FILTER_VALUE_INT;
 	fc->value.intValue = intValue;
 	fc->next = NULL;
 	return fc;
+}
+
+FilterCondition * appendFilterCondition(FilterCondition * head, FilterCondition * tail) {
+	if (head == NULL) {
+		return tail;
+	}
+	FilterCondition * current = head;
+	while (current->next != NULL) {
+		current = current->next;
+	}
+	current->next = tail;
+	return head;
 }
 
 Projection * createProjection(char ** columns, size_t columnCount) {
@@ -265,6 +270,18 @@ Program * createProgramFromStatements(Statement * statements) {
 	p->statements = statements;
 	p->expression = NULL;
 	return p;
+}
+
+SourceOptions * createSourceOptions(FilterCondition * filters, Projection * projection) {
+	SourceOptions * options = calloc(1, sizeof(SourceOptions));
+	if (options == NULL) {
+		destroyFilterCondition(filters);
+		destroyProjection(projection);
+		return NULL;
+	}
+	options->filters = filters;
+	options->projection = projection;
+	return options;
 }
 
 // Destructores
