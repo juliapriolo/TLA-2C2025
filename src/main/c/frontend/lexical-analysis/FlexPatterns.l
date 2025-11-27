@@ -5,6 +5,7 @@
 #include "../../support/type/TokenLabel.h"
 #include "../syntactic-analysis/AbstractSyntaxTree.h"
 #include "../syntactic-analysis/BisonParser.h"
+#include <stddef.h>
 
 }
 
@@ -26,7 +27,7 @@ extern CompilationStatus UnknownLexemeAction();
 extern CompilationStatus KeywordLexemeAction(TokenLabel label);
 extern CompilationStatus OperatorLexemeAction(TokenLabel label);
 extern CompilationStatus PunctuationLexemeAction(TokenLabel label);
-extern CompilationStatus StringLexemeAction(void);
+extern CompilationStatus StringLexemeAction(const char * text, size_t length);
 extern CompilationStatus NumberLexemeAction(void);
 extern CompilationStatus ColorLexemeAction(void);
 extern CompilationStatus IdentifierLexemeAction(void);
@@ -133,7 +134,7 @@ COLOR_PATTERN       #[0-9a-fA-F]{6}
 ")"             { return ParenthesisLexemeAction(CLOSE_PARENTHESIS); }
 
 
-{STRING_PATTERN}        { return StringLexemeAction(); }
+{STRING_PATTERN}        { return StringLexemeAction(yytext + 1, yyleng >= 2 ? (size_t)(yyleng - 2) : 0); }
 {NUMBER_PATTERN}        { return NumberLexemeAction(); }
 {INTEGER_PATTERN}       { return IntegerLexemeAction(); }
 {COLOR_PATTERN}         { return ColorLexemeAction(); }

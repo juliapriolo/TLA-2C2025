@@ -63,22 +63,6 @@ static void _setSemanticValue(Token * token, YYSTYPE value) {
 }
 
 
-/* Helper: extract string without quotes if present */
-static char * _unquote_string(const char * s) {
-    if (s == NULL) return NULL;
-    size_t len = strlen(s);
-    if (len >= 2 && s[0] == '"' && s[len-1] == '"') {
-        char * out = (char*)malloc(len - 1);
-        if (out == NULL) return NULL;
-        memcpy(out, s + 1, len - 2);
-        out[len-2] = '\0';
-        return out;
-    } else {
-        return strdup(s);
-    }
-}
-
-
 /* PUBLIC FUNCTIONS */
 /* cada una crea un token con la etiqueta LABEL correspondiente
  (ADD, SOURCE, GE, COMMA, etc)
@@ -120,23 +104,38 @@ CompilationStatus PunctuationLexemeAction(TokenLabel label) {
     return status;
 }
 
-CompilationStatus StringLexemeAction(void) {
+CompilationStatus StringLexemeAction(const char * text, size_t length) {
 	Token * token = createToken(_lexicalAnalyzer, STRING);
 	if (token == NULL) return OUT_OF_MEMORY;
 
-	/* Guardar valor semántico (sin comillas) */
 	if (token->lexeme != NULL) {
-		char * unq = _unquote_string(token->lexeme);
-		if (unq == NULL) {
+		free(token->lexeme);
+		token->lexeme = NULL;
+	}
+	char * duplicated = NULL;
+	if (text != NULL) {
+		duplicated = (char *) calloc(length + 1, sizeof(char));
+		if (duplicated == NULL) {
 			if (_logger) logError(_logger, "Out of memory while duplicating string lexeme.");
 			destroyToken(token);
 			return OUT_OF_MEMORY;
 		}
+		if (length > 0) {
+			memcpy(duplicated, text, length);
+		}
+		duplicated[length] = '\0';
 		YYSTYPE semantic;
 		memset(&semantic, 0, sizeof(YYSTYPE));
-		semantic.stringValue = unq;
+		semantic.stringValue = strdup(duplicated);
+		if (semantic.stringValue == NULL) {
+			if (_logger) logError(_logger, "Out of memory while setting semantic value for string.");
+			free(duplicated);
+			destroyToken(token);
+			return OUT_OF_MEMORY;
+		}
 		_setSemanticValue(token, semantic);
 	}
+	token->lexeme = duplicated;
 
 	_logTokenAction(__FUNCTION__, token);
 	CompilationStatus status = pushToken(_lexicalAnalyzer, token);
