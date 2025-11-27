@@ -42,6 +42,7 @@ Chart * ChartSemanticAction(char * title, ChartType type, Source * sources, char
 ChartType ChartTypeSemanticAction(TokenLabel token);
 FilterOperator FilterOperatorSemanticAction(TokenLabel token);
 
+bool ValidateProgramSemantics(Program * program);
 void SetCurrentChart(Chart * chart);
 void SetChartId(char * id);
 void SetChartYAlias(char * alias);

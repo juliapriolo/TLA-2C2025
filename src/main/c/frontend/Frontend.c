@@ -1,8 +1,4 @@
 #include "Frontend.h"
-#include "lexical-analysis/FlexScanner.h"
-#include "syntactic-analysis/BisonParser.h"
-#include "syntactic-analysis/BisonActions.h"
-#include <stdio.h>
 
 /* MODULE INTERNAL STATE */
 
@@ -12,7 +8,7 @@ static Logger * _logger = NULL;
 /** Shutdown module's internal state. */
 void _shutdownFrontendModule() {
 	if (_logger != NULL) {
-		// logDebugging(_logger, "Destroying module: Frontend...");
+		logDebugging(_logger, "Destroying module: Frontend...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
@@ -71,26 +67,15 @@ LexicalAnalyzer * createLexicalAnalyzer() {
 }
 
 Token * createToken(LexicalAnalyzer * lexicalAnalyzer, TokenLabel label) {
-    Token * t = (Token *) malloc(sizeof(Token));
-    if (!t) return NULL;
-
-    /* Inicializar campos mínimos (lexeme normalmente lo rellena flex internamente) */
-    t->lexeme = NULL;                 /* será establecida por quien cree el token o por flex wrapper */
-    t->context = 0;
-    t->label = label;
-    t->length = 0;
-    t->line = 0;
-
-    /* Crear y zero-fill la SemanticValue */
-    t->semanticValue = (SemanticValue *) malloc(sizeof(SemanticValue));
-    if (t->semanticValue == NULL) {
-        free(t);
-        return NULL;
-    }
-    /* Inicializar a cero para evitar basura */
-    memset(t->semanticValue, 0, sizeof(SemanticValue));
-
-    return t;
+	Token * token = (Token *) calloc(1, sizeof(Token));
+	token->context = flexCurrentContext(lexicalAnalyzer);
+	token->label = label;
+	token->length = yyget_leng(lexicalAnalyzer->scanner);
+	token->lexeme = (char *) calloc(token->length + 1, sizeof(char));
+	token->line = yyget_lineno(lexicalAnalyzer->scanner);
+	token->semanticValue = NULL; // Bison maneja el valor semántico
+	strncpy(token->lexeme, yyget_text(lexicalAnalyzer->scanner), token->length);
+	return token;
 }
 
 FlexContext currentLexicalAnalyzerContext(LexicalAnalyzer * lexicalAnalyzer) {
@@ -142,23 +127,15 @@ void destroyLexicalAnalyzer(LexicalAnalyzer * lexicalAnalyzer) {
 	}
 }
 
-void destroyToken(Token * t) {
-    if (!t) return;
-
-    /* No liberar aquí el contenido de semanticValue (e.g., strings):
-       el parser/AST asume ownership y lo libera al destruir el AST. */
-    if (t->semanticValue != NULL) {
-        free(t->semanticValue);
-        t->semanticValue = NULL;
+void destroyToken(Token * token) {
+	if (token != NULL) {
+		if (token->lexeme != NULL) {
+			free(token->lexeme);
+			token->lexeme = NULL;
+        }
+		// El valor semántico lo libera el parser/AST
+		free(token);
     }
-
-    /* liberamos lexeme si createToken lo duplicó (patch según tu implementación) */
-    if (t->lexeme != NULL) {
-        free(t->lexeme);
-        t->lexeme = NULL;
-    }
-
-    free(t);
 }
 
 void enterLexicalAnalyzerContext(LexicalAnalyzer * lexicalAnalyzer, FlexContext flexContext) {
@@ -166,26 +143,20 @@ void enterLexicalAnalyzerContext(LexicalAnalyzer * lexicalAnalyzer, FlexContext 
 }
 
 CompilationStatus executeLexicalAnalysis(LexicalAnalyzer * lexicalAnalyzer) {
-	YYSTYPE yylval;
 	return (CompilationStatus) yylex(
-		&yylval,
+		NULL,
 		(YYLTYPE *) lexicalAnalyzer->location,
 		lexicalAnalyzer->scanner);
 }
 
 CompilationStatus executeSyntacticAnalysis() {
-	// logDebugging(_logger, "Parsing...");
+	logDebugging(_logger, "Parsing...");
 	CompilationStatus status = IN_PROGRESS;
 	while (status == IN_PROGRESS) {
 		status = executeLexicalAnalysis(_lexicalAnalyzer);
 	}
-	if (status == SUCCEEDED) {
-		if (bisonHasSemanticErrors()) {
-			status = FAILED;
-		}
-	}
-	// logDebugging(_logger, "Compilation status: %s.", _compilationStatusAsString(status));
-	// logDebugging(_logger, "Parsing is done.");
+	logDebugging(_logger, "Compilation status: %s.", _compilationStatusAsString(status));
+	logDebugging(_logger, "Parsing is done.");
 	return status;
 }
 
@@ -203,24 +174,10 @@ void pushInputBuffer(InputBuffer * inputBuffer) {
 }
 
 CompilationStatus pushToken(LexicalAnalyzer * lexicalAnalyzer, Token * token) {
-	int bisonStatus = yypush_parse(
+	// El valor semántico debe ser del tipo YYSTYPE (BisonSemanticValue)
+	return (CompilationStatus) yypush_parse(
 		(yypstate *) lexicalAnalyzer->parser,
 		token->label,
-		(const YYSTYPE *) token->semanticValue,
+		(YYSTYPE *) &(token->semanticValue),
 		(YYLTYPE *) lexicalAnalyzer->location);
-	
-	// Convertir valores de Bison a CompilationStatus
-	// YYPUSH_MORE = 4 -> IN_PROGRESS = 4
-	// 0 (YYACCEPT) -> SUCCEEDED = 0
-	// 1 (YYABORT) -> FAILED = 1
-	if (bisonStatus == 4) {  // YYPUSH_MORE
-		return IN_PROGRESS;
-	} else if (bisonStatus == 0) {  // YYACCEPT
-		return SUCCEEDED;
-	} else if (bisonStatus == 1) {  // YYABORT
-		return FAILED;
-	} else {
-		// Otro valor de error
-		return FAILED;
-	}
 }

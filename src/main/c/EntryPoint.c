@@ -41,7 +41,17 @@ const int main(const int length, const char ** arguments) {
 	};
 	CompilationStatus compilationStatus = executeSyntacticAnalysis();
 	Program * program = compilerState.abstractSyntaxtTree;
-	
+
+	if (compilationStatus == SUCCEEDED && program != NULL) {
+		/* Validaciones semánticas adicionales (duplicados, etc.) */
+		if (!ValidateProgramSemantics(program)) {
+			compilationStatus = FAILED;
+		}
+		if (bisonHasSemanticErrors()) {
+			compilationStatus = FAILED;
+		}
+	}
+
 	if (compilationStatus == SUCCEEDED && program != NULL) {
 		printAST(program);
 	}

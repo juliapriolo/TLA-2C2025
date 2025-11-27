@@ -26,19 +26,14 @@ extern CompilationStatus UnknownLexemeAction();
 extern CompilationStatus KeywordLexemeAction(TokenLabel label);
 extern CompilationStatus OperatorLexemeAction(TokenLabel label);
 extern CompilationStatus PunctuationLexemeAction(TokenLabel label);
-extern CompilationStatus StringLexemeAction(TokenLabel label);
-extern CompilationStatus NumberLexemeAction(TokenLabel label);
-extern CompilationStatus ColorLexemeAction(TokenLabel label);
-extern CompilationStatus IdentifierLexemeAction(TokenLabel label);
+extern CompilationStatus StringLexemeAction(void);
+extern CompilationStatus NumberLexemeAction(void);
+extern CompilationStatus ColorLexemeAction(void);
+extern CompilationStatus IdentifierLexemeAction(void);
 
 %}
 
 /* === Opciones generales === */
-%option noyywrap
-%option nounput
-%option noinput
-%option caseless
-
 /* === Contextos === */
 
 %x IMPORT_EXPRESSION
@@ -46,7 +41,7 @@ extern CompilationStatus IdentifierLexemeAction(TokenLabel label);
 
 /* === Patrones reutilizables === */
 
-whitespace          [[:space:]]+
+WHITESPACE_PATTERN  [[:space:]]+
 IDENTIFIER_PATTERN  [a-zA-Z_][a-zA-Z0-9_]*
 STRING_PATTERN      \"[^\"]*\"
 NUMBER_PATTERN      [0-9]+\.[0-9]+
@@ -63,23 +58,22 @@ COLOR_PATTERN       #[0-9a-fA-F]{6}
 
 %}
 
-"{"									{ return EnterImportExpressionLexemeAction(IMPORT_EXPRESSION); }
-<IMPORT_EXPRESSION>[^{}]+			{ return SubexpressionLexemeAction(); }
-<IMPORT_EXPRESSION>"}"				{ return LeaveImportExpressionLexemeAction(); }
-<IMPORT_EXPRESSION>.				{ return UnknownLexemeAction(); }
+"{"                                 { return EnterImportExpressionLexemeAction(IMPORT_EXPRESSION); }
+<IMPORT_EXPRESSION>[^{}]+           { return SubexpressionLexemeAction(); }
+<IMPORT_EXPRESSION>"}"              { return LeaveImportExpressionLexemeAction(); }
+<IMPORT_EXPRESSION>.                { return UnknownLexemeAction(); }
 
-"/*"								{ return EnterMultilineCommentLexemeAction(MULTILINE_COMMENT); }
-<MULTILINE_COMMENT>"*/"				{ return LeaveMultilineCommentLexemeAction(); }
-<MULTILINE_COMMENT>[^*]+			{ return IgnoredLexemeAction(); }
-<MULTILINE_COMMENT>.				{ return IgnoredLexemeAction(); }
-
-
-
+"/*"                                { return EnterMultilineCommentLexemeAction(MULTILINE_COMMENT); }
+<MULTILINE_COMMENT>"*/"             { return LeaveMultilineCommentLexemeAction(); }
+<MULTILINE_COMMENT>[^*]+            { return IgnoredLexemeAction(); }
+<MULTILINE_COMMENT>.                { return IgnoredLexemeAction(); }
 
 
 "source"        { return KeywordLexemeAction(SOURCE); }
 "chart"         { return KeywordLexemeAction(CHART); }
 "from"          { return KeywordLexemeAction(FROM); }
+"select"        { return KeywordLexemeAction(SELECT); }
+"where"         { return KeywordLexemeAction(WHERE); }
 "filter"        { return KeywordLexemeAction(FILTER); }
 "project"       { return KeywordLexemeAction(PROJECT); }
 "aggregate"     { return KeywordLexemeAction(AGGREGATE); }
@@ -118,10 +112,6 @@ COLOR_PATTERN       #[0-9a-fA-F]{6}
 "off"           { return KeywordLexemeAction(OFF); }
 
 
-
-
-
-
 ">="            { return OperatorLexemeAction(GE); }
 "<="            { return OperatorLexemeAction(LE); }
 "=="            { return OperatorLexemeAction(EQEQ); }
@@ -143,28 +133,12 @@ COLOR_PATTERN       #[0-9a-fA-F]{6}
 ")"             { return ParenthesisLexemeAction(CLOSE_PARENTHESIS); }
 
 
-
-
-
-
-{STRING_PATTERN}    { return StringLexemeAction(STRING); }
-{NUMBER_PATTERN}    { return NumberLexemeAction(NUMBER); }
-{INTEGER_PATTERN}   { return IntegerLexemeAction(); }
-{COLOR_PATTERN}     { return ColorLexemeAction(COLOR); }
-
-
-
-
-
-{IDENTIFIER_PATTERN}    { return IdentifierLexemeAction(IDENTIFIER); }
-
-
-
-
-
-{whitespace}        { return IgnoredLexemeAction(); }
-
-
+{STRING_PATTERN}        { return StringLexemeAction(); }
+{NUMBER_PATTERN}        { return NumberLexemeAction(); }
+{INTEGER_PATTERN}       { return IntegerLexemeAction(); }
+{COLOR_PATTERN}         { return ColorLexemeAction(); }
+{IDENTIFIER_PATTERN}    { return IdentifierLexemeAction(); }
+{WHITESPACE_PATTERN}    { return IgnoredLexemeAction(); }
 
 
 

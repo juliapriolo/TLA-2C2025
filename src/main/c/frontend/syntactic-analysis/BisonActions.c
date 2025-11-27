@@ -480,3 +480,65 @@ void SetChartHole(double hole) {
 bool bisonHasSemanticErrors(void) {
 	return _semanticErrorDetected;
 }
+
+bool ValidateProgramSemantics(Program * program) {
+	bool ok = true;
+	/* Si ya hubo errores semánticos previos, mantener el flag */
+	if (_semanticErrorDetected) {
+		ok = false;
+	}
+	if (program == NULL || program->statements == NULL) {
+		return ok;
+	}
+
+	/* Verificar IDs duplicados en charts */
+	size_t idCount = 0;
+	size_t idCapacity = 4;
+	char ** seenIds = (char **)calloc(idCapacity, sizeof(char *));
+	if (seenIds == NULL) {
+		if (_logger) logError(_logger, "Out of memory while validating chart identifiers.");
+		_semanticErrorDetected = true;
+		return false;
+	}
+
+	Statement * stmt = program->statements;
+	while (stmt != NULL) {
+		if (stmt->type == STMT_CHART && stmt->chart != NULL && stmt->chart->id != NULL) {
+			const char * currentId = stmt->chart->id;
+			for (size_t i = 0; i < idCount; ++i) {
+				if (seenIds[i] != NULL && strcmp(seenIds[i], currentId) == 0) {
+					if (_logger) logError(_logger, "Duplicate chart identifier \"%s\".", currentId);
+					ok = false;
+					_semanticErrorDetected = true;
+					break;
+				}
+			}
+			if (ok) {
+				if (idCount == idCapacity) {
+					size_t newCapacity = idCapacity * 2;
+					char ** resized = (char **)realloc(seenIds, newCapacity * sizeof(char *));
+					if (resized == NULL) {
+						if (_logger) logError(_logger, "Out of memory while tracking chart identifiers.");
+						ok = false;
+						_semanticErrorDetected = true;
+						break;
+					}
+					seenIds = resized;
+					/* Inicializar nuevos slots */
+					for (size_t j = idCapacity; j < newCapacity; ++j) {
+						seenIds[j] = NULL;
+					}
+					idCapacity = newCapacity;
+				}
+				seenIds[idCount++] = (char *)currentId;
+			}
+		}
+		stmt = stmt->next;
+	}
+
+	if (seenIds != NULL) {
+		free(seenIds);
+	}
+
+	return ok;
+}
