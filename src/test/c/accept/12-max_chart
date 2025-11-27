@@ -1,0 +1,9 @@
+source salarios = from "salarios.csv"
+    project ["Departamento", "Salario"];
+
+chart "Máximo salario por departamento" type bar:
+    from salarios,
+    x = "Departamento",
+    y = max("Salario"),
+    colors = [#FF5733, #33FF57, #3357FF],
+    id = "max_salarios_chart";
