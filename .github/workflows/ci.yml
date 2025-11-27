@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, development ]
+  pull_request:
+    branches: [ main, master, development ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          bison \
+          cmake \
+          flex \
+          gcc \
+          make
+        
+    - name: Make scripts executable
+      run: |
+        chmod +x src/main/bash/*.sh
+        
+    - name: Build project
+      run: |
+        src/main/bash/build.sh
+        
+    - name: Verify executable exists
+      run: |
+        if [ ! -f ".build/Flex-Bison-Compiler" ]; then
+          echo "Error: Executable not found!"
+          exit 1
+        fi
+        echo "Executable found successfully"
+        
+    - name: Run tests
+      run: |
+        src/main/bash/test.sh
+
