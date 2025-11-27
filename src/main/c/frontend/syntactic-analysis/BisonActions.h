@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 /** Initialize module's internal state. */
-ModuleDestructor initializeBisonActionsModule();
+ModuleDestructor initializeBisonActionsModule(CompilerState * compilerState);
 
 /**
  * Bison semantic actions.
@@ -55,5 +55,7 @@ void SetChartLegendPosition(TokenLabel position);
 void SetChartHole(double hole);
 
 bool bisonHasSemanticErrors(void);
+const char * const * bisonSemanticErrors(void);
+size_t bisonSemanticErrorCount(void);
 
 #endif
