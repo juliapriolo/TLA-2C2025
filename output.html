@@ -1,3 +1,786 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Tests</title></head>
+<body>
+<h1>Test outputs</h1>
+<h2>01-bar_simple</h2>
+<pre>
+[[0;35mDEBUG[0m][Frontend] Parsing...
+[[0;35mDEBUG[0m][Frontend] Compilation status: SUCCEEDED.
+[[0;35mDEBUG[0m][Frontend] Parsing is done.
+=== AST ===
+
+--- Statement 0 ---
+Statement:
+  Chart:
+    title: Ventas 2024
+    type: BAR
+    xColumn: Mes
+    yColumn: Monto
+    yAlias: NULL
+    id: grafico_ventas
+    orientation: vertical
+    colors: [#4CAF50, #2196F3]
+    sources:
+      Source:
+        identifier: NULL
+        csvFile: ventas.csv
+        sourceIdentifier: NULL
+==========
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generated Chart</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .chart-container { margin: 20px 0; max-width: 800px; }
+        </style>
+    </head>
+    <body>
+    <div class="chart-container">
+        <canvas id="grafico_ventas"></canvas>
+    </div>
+    <script>
+        const ctx_grafico_ventas = document.getElementById('grafico_ventas').getContext('2d');
+        new Chart(ctx_grafico_ventas, {
+            type: 'bar',
+            data: {
+                labels: ['Enero', 'Enero', 'Enero', 'Febrero', 'Febrero', 'Febrero', 'Marzo', 'Marzo', 'Marzo', 'Marzo', 'Abril', 'Abril', 'Abril', 'Mayo', 'Mayo', 'Mayo', 'Mayo', 'Junio', 'Junio'],
+                datasets: [{
+                    label: 'Monto',
+                    data: [15000.000000, 16000.000000, 20000.000000, 18000.000000, 21000.000000, 13000.000000, 22000.000000, 24000.000000, 20000.000000, 21000.000000, 19000.000000, 23000.000000, 11000.000000, 25000.000000, 27000.000000, 30000.000000, 29000.000000, 28000.000000, 26000.000000],
+                    backgroundColor: ['#4CAF50', '#2196F3', '#2196F3', '#2196F3', '#2196F3', '#2196F3', '#2196F3', '#2196F3', '#2196F3', '#2196F3', '#2196F3', '#2196F3', '#2196F3', '#2196F3', '#2196F3', '#2196F3', '#2196F3', '#2196F3', '#2196F3'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Ventas 2024'
+                    }
+                },
+                indexAxis: 'x',
+            }
+        });
+    </script>
+    </body>
+</html>
+[[0;35mDEBUG[0m][Frontend] Destroying module: Frontend...
+
+</pre>
+<h2>02-scatter_simple</h2>
+<pre>
+[[0;35mDEBUG[0m][Frontend] Parsing...
+[[0;35mDEBUG[0m][Frontend] Compilation status: SUCCEEDED.
+[[0;35mDEBUG[0m][Frontend] Parsing is done.
+=== AST ===
+
+--- Statement 0 ---
+Statement:
+  Chart:
+    title: Altura vs Peso
+    type: SCATTER
+    xColumn: Peso
+    yColumn: Altura
+    yAlias: NULL
+    id: grafico_altura_peso
+    color: #FF0000
+    xRange: [50.00, 100.00]
+    yRange: [150.00, 200.00]
+    sources:
+      Source:
+        identifier: NULL
+        csvFile: datos_personas.csv
+        sourceIdentifier: NULL
+==========
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generated Chart</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .chart-container { margin: 20px 0; max-width: 800px; }
+        </style>
+    </head>
+    <body>
+    <div class="chart-container">
+        <canvas id="grafico_altura_peso"></canvas>
+    </div>
+    <script>
+        const ctx_grafico_altura_peso = document.getElementById('grafico_altura_peso').getContext('2d');
+        new Chart(ctx_grafico_altura_peso, {
+            type: 'scatter',
+            data: {
+                labels: ['70', '65', '80', '55', '75', '60'],
+                datasets: [{
+                    label: 'Altura',
+                    data: [175.000000, 170.000000, 180.000000, 165.000000, 178.000000, 172.000000],
+                    backgroundColor: '#FF0000',
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Altura vs Peso'
+                    }
+                },
+                scales: {
+                    x: {
+                        min: 50.00,
+                        max: 100.00
+                    },
+                    y: {
+                        min: 150.00,
+                        max: 200.00
+                    }
+                }
+            }
+        });
+    </script>
+    </body>
+</html>
+[[0;35mDEBUG[0m][Frontend] Destroying module: Frontend...
+
+</pre>
+<h2>03-pie_simple</h2>
+<pre>
+[[0;35mDEBUG[0m][Frontend] Parsing...
+[[0;35mDEBUG[0m][Frontend] Compilation status: SUCCEEDED.
+[[0;35mDEBUG[0m][Frontend] Parsing is done.
+=== AST ===
+
+--- Statement 0 ---
+Statement:
+  Chart:
+    title: Tartas 2025
+    type: PIE
+    xColumn: Tipo_de_tartas
+    yColumn: Cantidad
+    yAlias: NULL
+    id: tipo_tartas
+    legend: right
+    sources:
+      Source:
+        identifier: NULL
+        csvFile: tartas_2025.csv
+        sourceIdentifier: NULL
+==========
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generated Chart</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .chart-container { margin: 20px 0; max-width: 800px; }
+        </style>
+    </head>
+    <body>
+    <div class="chart-container">
+        <canvas id="tipo_tartas"></canvas>
+    </div>
+    <script>
+        const ctx_tipo_tartas = document.getElementById('tipo_tartas').getContext('2d');
+        new Chart(ctx_tipo_tartas, {
+            type: 'pie',
+            data: {
+                labels: ['Chocolate', 'Vainilla', 'Fresa', 'Limon', 'Chantilly'],
+                datasets: [{
+                    label: 'Cantidad',
+                    data: [25.000000, 30.000000, 20.000000, 15.000000, 35.000000],
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Tartas 2025'
+                    }
+                    ,
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+    </script>
+    </body>
+</html>
+[[0;35mDEBUG[0m][Frontend] Destroying module: Frontend...
+
+</pre>
+<h2>04-donut_simple</h2>
+<pre>
+[[0;35mDEBUG[0m][Frontend] Parsing...
+[[0;35mDEBUG[0m][Frontend] Compilation status: SUCCEEDED.
+[[0;35mDEBUG[0m][Frontend] Parsing is done.
+=== AST ===
+
+--- Statement 0 ---
+Statement:
+  Chart:
+    title: Distribución de gastos mensuales
+    type: DONUT
+    xColumn: Gastos
+    yColumn: Porcentaje
+    yAlias: NULL
+    id: grafico_donut
+    legend: off
+    hole: 0.20
+    sources:
+      Source:
+        identifier: NULL
+        csvFile: gastosmensuales.csv
+        sourceIdentifier: NULL
+==========
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generated Chart</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .chart-container { margin: 20px 0; max-width: 800px; }
+        </style>
+    </head>
+    <body>
+    <div class="chart-container">
+        <canvas id="grafico_donut"></canvas>
+    </div>
+    <script>
+        const ctx_grafico_donut = document.getElementById('grafico_donut').getContext('2d');
+        new Chart(ctx_grafico_donut, {
+            type: 'doughnut',
+            data: {
+                labels: ['Alimentacion', 'Transporte', 'Entretenimiento', 'Salud', 'Otros'],
+                datasets: [{
+                    label: 'Porcentaje',
+                    data: [40.000000, 20.000000, 15.000000, 15.000000, 10.000000],
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Distribución de gastos mensuales'
+                    }
+                    ,
+                    legend: {
+                        position: 'off'
+                    }
+                },
+                cutout: '20%',
+            }
+        });
+    </script>
+    </body>
+</html>
+[[0;35mDEBUG[0m][Frontend] Destroying module: Frontend...
+
+</pre>
+<h2>05-source_with_filter_project</h2>
+<pre>
+[[0;35mDEBUG[0m][Frontend] Parsing...
+[[0;35mDEBUG[0m][Frontend] Compilation status: SUCCEEDED.
+[[0;35mDEBUG[0m][Frontend] Parsing is done.
+=== AST ===
+
+--- Statement 0 ---
+Statement:
+  Source:
+    identifier: datos_filtrados
+    csvFile: personas.csv
+    sourceIdentifier: NULL
+    filters:
+      - Edad > 18
+    projection: ["Edad", "Altura", "Peso"]
+
+--- Statement 1 ---
+Statement:
+  Chart:
+    title: BMI Promedio
+    type: LINE
+    xColumn: Edad
+    yExpression:
+      (("Peso"
+ * 10000
+)
+ / ("Altura"
+ * "Altura"
+)
+)
+    yAlias: BMI
+    id: grafico_bmi
+    colors: [#8E44AD]
+    sources:
+      Source:
+        identifier: NULL
+        csvFile: NULL
+        sourceIdentifier: datos_filtrados
+==========
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generated Chart</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .chart-container { margin: 20px 0; max-width: 800px; }
+        </style>
+    </head>
+    <body>
+    <div class="chart-container">
+        <canvas id="grafico_bmi"></canvas>
+    </div>
+    <script>
+        const ctx_grafico_bmi = document.getElementById('grafico_bmi').getContext('2d');
+        new Chart(ctx_grafico_bmi, {
+            type: 'line',
+            data: {
+                labels: ['25', '30', '22', '28', '35', '20'],
+                datasets: [{
+                    label: 'BMI',
+                    data: [22.857143, 22.491349, 24.691358, 20.202020, 23.671254, 20.281233],
+                    backgroundColor: ['#8E44AD', '#8E44AD', '#8E44AD', '#8E44AD', '#8E44AD', '#8E44AD'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'BMI Promedio'
+                    }
+                }
+            }
+        });
+    </script>
+    </body>
+</html>
+[[0;35mDEBUG[0m][Frontend] Destroying module: Frontend...
+
+</pre>
+<h2>06-aggregation_average</h2>
+<pre>
+[[0;35mDEBUG[0m][Frontend] Parsing...
+[[0;35mDEBUG[0m][Frontend] Compilation status: SUCCEEDED.
+[[0;35mDEBUG[0m][Frontend] Parsing is done.
+=== AST ===
+
+--- Statement 0 ---
+Statement:
+  Chart:
+    title: Promedio de ventas por mes
+    type: LINE
+    xColumn: Mes
+    yExpression:
+      average("Monto")
+    yAlias: NULL
+    id: grafico_promedio
+    colors: [#2980B9]
+    sources:
+      Source:
+        identifier: NULL
+        csvFile: ventas.csv
+        sourceIdentifier: NULL
+==========
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generated Chart</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .chart-container { margin: 20px 0; max-width: 800px; }
+        </style>
+    </head>
+    <body>
+    <div class="chart-container">
+        <canvas id="grafico_promedio"></canvas>
+    </div>
+    <script>
+        const ctx_grafico_promedio = document.getElementById('grafico_promedio').getContext('2d');
+        new Chart(ctx_grafico_promedio, {
+            type: 'line',
+            data: {
+                labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'],
+                datasets: [{
+                    label: 'Monto',
+                    data: [17000.000000, 17333.333333, 21750.000000, 17666.666667, 27750.000000, 27000.000000],
+                    backgroundColor: ['#2980B9', '#2980B9', '#2980B9', '#2980B9', '#2980B9', '#2980B9'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Promedio de ventas por mes'
+                    }
+                }
+            }
+        });
+    </script>
+    </body>
+</html>
+[[0;35mDEBUG[0m][Frontend] Destroying module: Frontend...
+
+</pre>
+<h2>07-multiple_sources</h2>
+<pre>
+[[0;35mDEBUG[0m][Frontend] Parsing...
+[[0;35mDEBUG[0m][Frontend] Compilation status: SUCCEEDED.
+[[0;35mDEBUG[0m][Frontend] Parsing is done.
+=== AST ===
+
+--- Statement 0 ---
+Statement:
+  Source:
+    identifier: ventas_norte
+    csvFile: ventas_norte.csv
+    sourceIdentifier: NULL
+    projection: ["Mes", "Monto"]
+
+--- Statement 1 ---
+Statement:
+  Source:
+    identifier: ventas_sur
+    csvFile: ventas_sur.csv
+    sourceIdentifier: NULL
+    projection: ["Mes", "Monto"]
+
+--- Statement 2 ---
+Statement:
+  Chart:
+    title: Comparación de ventas por región
+    type: LINE
+    xColumn: Mes
+    yColumn: Monto
+    yAlias: NULL
+    id: grafico_series
+    colors: [#E74C3C, #2ECC71]
+    sources:
+      Source:
+        identifier: NULL
+        csvFile: NULL
+        sourceIdentifier: ventas_norte
+      Source:
+        identifier: NULL
+        csvFile: NULL
+        sourceIdentifier: ventas_sur
+==========
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generated Chart</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .chart-container { margin: 20px 0; max-width: 800px; }
+        </style>
+    </head>
+    <body>
+    <div class="chart-container">
+        <canvas id="grafico_series"></canvas>
+    </div>
+    <script>
+        const ctx_grafico_series = document.getElementById('grafico_series').getContext('2d');
+        new Chart(ctx_grafico_series, {
+            type: 'line',
+            data: {
+                labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'],
+                datasets: [{
+                    label: 'Monto',
+                    data: [12000.000000, 15000.000000, 18000.000000, 16000.000000, 20000.000000, 22000.000000, 18000.000000, 21000.000000, 24000.000000, 22000.000000, 28000.000000, 30000.000000],
+                    backgroundColor: ['#E74C3C', '#2ECC71', '#2ECC71', '#2ECC71', '#2ECC71', '#2ECC71', '#2ECC71', '#2ECC71', '#2ECC71', '#2ECC71', '#2ECC71', '#2ECC71'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Comparación de ventas por región'
+                    }
+                }
+            }
+        });
+    </script>
+    </body>
+</html>
+[[0;35mDEBUG[0m][Frontend] Destroying module: Frontend...
+
+</pre>
+<h2>08-source_composition</h2>
+<pre>
+[[0;35mDEBUG[0m][Frontend] Parsing...
+[[0;35mDEBUG[0m][Frontend] Compilation status: SUCCEEDED.
+[[0;35mDEBUG[0m][Frontend] Parsing is done.
+=== AST ===
+
+--- Statement 0 ---
+Statement:
+  Source:
+    identifier: base
+    csvFile: ventas_con_año.csv
+    sourceIdentifier: NULL
+    filters:
+      - Año == 2024
+
+--- Statement 1 ---
+Statement:
+  Source:
+    identifier: mayores_a_1000
+    csvFile: NULL
+    sourceIdentifier: base
+    filters:
+      - Monto > 1000
+    projection: ["Mes", "Monto"]
+
+--- Statement 2 ---
+Statement:
+  Chart:
+    title: Ventas mayores a 1000
+    type: BAR
+    xColumn: Mes
+    yColumn: Monto
+    yAlias: NULL
+    id: grafico_filtrado
+    colors: [#9B59B6]
+    sources:
+      Source:
+        identifier: NULL
+        csvFile: NULL
+        sourceIdentifier: mayores_a_1000
+==========
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generated Chart</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .chart-container { margin: 20px 0; max-width: 800px; }
+        </style>
+    </head>
+    <body>
+    <div class="chart-container">
+        <canvas id="grafico_filtrado"></canvas>
+    </div>
+    <script>
+        const ctx_grafico_filtrado = document.getElementById('grafico_filtrado').getContext('2d');
+        new Chart(ctx_grafico_filtrado, {
+            type: 'bar',
+            data: {
+                labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'],
+                datasets: [{
+                    label: 'Monto',
+                    data: [15000.000000, 18000.000000, 22000.000000, 19000.000000, 25000.000000, 28000.000000],
+                    backgroundColor: ['#9B59B6', '#9B59B6', '#9B59B6', '#9B59B6', '#9B59B6', '#9B59B6'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Ventas mayores a 1000'
+                    }
+                }
+            }
+        });
+    </script>
+    </body>
+</html>
+[[0;35mDEBUG[0m][Frontend] Destroying module: Frontend...
+
+</pre>
+<h2>09-all_options</h2>
+<pre>
+[[0;35mDEBUG[0m][Frontend] Parsing...
+[[0;35mDEBUG[0m][Frontend] Compilation status: SUCCEEDED.
+[[0;35mDEBUG[0m][Frontend] Parsing is done.
+=== AST ===
+
+--- Statement 0 ---
+Statement:
+  Chart:
+    title: Gráfico con todas las opciones
+    type: BAR
+    xColumn: Categoria
+    yColumn: Valor
+    yAlias: NULL
+    id: grafico_completo
+    orientation: horizontal
+    legend: top
+    colors: [#FF5733, #33FF57, #3357FF]
+    sources:
+      Source:
+        identifier: NULL
+        csvFile: datos.csv
+        sourceIdentifier: NULL
+==========
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generated Chart</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .chart-container { margin: 20px 0; max-width: 800px; }
+        </style>
+    </head>
+    <body>
+[[1;31mERROR[0m][DataProcessor] Column 'Valor' not found in CSV. Available columns:
+[[1;31mERROR[0m][DataProcessor]   [0] 'Tiempo'
+[[1;31mERROR[0m][DataProcessor]   [1] 'Peso'
+[[1;31mERROR[0m][DataProcessor] Column 'Valor' not found in CSV. Available columns:
+[[1;31mERROR[0m][DataProcessor]   [0] 'Tiempo'
+[[1;31mERROR[0m][DataProcessor]   [1] 'Peso'
+[[1;31mERROR[0m][DataProcessor] Column 'Valor' not found in CSV. Available columns:
+[[1;31mERROR[0m][DataProcessor]   [0] 'Tiempo'
+[[1;31mERROR[0m][DataProcessor]   [1] 'Peso'
+[[1;31mERROR[0m][DataProcessor] Column 'Valor' not found in CSV. Available columns:
+[[1;31mERROR[0m][DataProcessor]   [0] 'Tiempo'
+[[1;31mERROR[0m][DataProcessor]   [1] 'Peso'
+[[1;31mERROR[0m][DataProcessor] Column 'Valor' not found in CSV. Available columns:
+[[1;31mERROR[0m][DataProcessor]   [0] 'Tiempo'
+[[1;31mERROR[0m][DataProcessor]   [1] 'Peso'
+    <div class="chart-container">
+        <canvas id="grafico_completo"></canvas>
+    </div>
+    <script>
+        const ctx_grafico_completo = document.getElementById('grafico_completo').getContext('2d');
+        new Chart(ctx_grafico_completo, {
+            type: 'bar',
+            data: {
+                labels: ['', '', '', '', ''],
+                datasets: [{
+                    label: 'Valor',
+                    data: [0.000000, 0.000000, 0.000000, 0.000000, 0.000000],
+                    backgroundColor: ['#FF5733', '#33FF57', '#3357FF', '#3357FF', '#3357FF'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Gráfico con todas las opciones'
+                    }
+                    ,
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                indexAxis: 'y',
+            }
+        });
+    </script>
+    </body>
+</html>
+[[0;35mDEBUG[0m][Frontend] Destroying module: Frontend...
+
+</pre>
+<h2>10-mathematical_operations</h2>
+<pre>
+[[0;35mDEBUG[0m][Frontend] Parsing...
+[[0;35mDEBUG[0m][Frontend] Compilation status: SUCCEEDED.
+[[0;35mDEBUG[0m][Frontend] Parsing is done.
+=== AST ===
+
+--- Statement 0 ---
+Statement:
+  Chart:
+    title: Operaciones matemáticas
+    type: LINE
+    xColumn: Tiempo
+    yExpression:
+      ("Peso"
+ / 1000
+)
+    yAlias: Peso en kg
+    id: operaciones
+    colors: [#FF0000]
+    sources:
+      Source:
+        identifier: NULL
+        csvFile: datos.csv
+        sourceIdentifier: NULL
+==========
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generated Chart</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .chart-container { margin: 20px 0; max-width: 800px; }
+        </style>
+    </head>
+    <body>
+    <div class="chart-container">
+        <canvas id="operaciones"></canvas>
+    </div>
+    <script>
+        const ctx_operaciones = document.getElementById('operaciones').getContext('2d');
+        new Chart(ctx_operaciones, {
+            type: 'line',
+            data: {
+                labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo'],
+                datasets: [{
+                    label: 'Peso en kg',
+                    data: [1.500000, 1.800000, 2.200000, 1.900000, 2.500000],
+                    backgroundColor: ['#FF0000', '#FF0000', '#FF0000', '#FF0000', '#FF0000'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Operaciones matemáticas'
+                    }
+                }
+            }
+        });
+    </script>
+    </body>
+</html>
+[[0;35mDEBUG[0m][Frontend] Destroying module: Frontend...
+
+</pre>
+<h2>11-pie_count</h2>
+<pre>
 [[0;35mDEBUG[0m][Frontend] Parsing...
 [[0;35mDEBUG[0m][Frontend] Compilation status: SUCCEEDED.
 [[0;35mDEBUG[0m][Frontend] Parsing is done.
@@ -52,7 +835,7 @@ Statement:
                 labels: [' Partido A', ' Partido B', ' Partido C'],
                 datasets: [{
                     label: 'Partido_Político_Votado',
-                    data: [3.000000, 2.000000, 1.000000],
+                    data: [4.000000, 3.000000, 2.000000],
                     backgroundColor: ['#FF5733', '#33FF57', '#3357FF'],
                 }]
             },
@@ -70,3 +853,235 @@ Statement:
     </body>
 </html>
 [[0;35mDEBUG[0m][Frontend] Destroying module: Frontend...
+
+</pre>
+<h2>12-max_chart</h2>
+<pre>
+[[0;35mDEBUG[0m][Frontend] Parsing...
+[[0;35mDEBUG[0m][Frontend] Compilation status: SUCCEEDED.
+[[0;35mDEBUG[0m][Frontend] Parsing is done.
+=== AST ===
+
+--- Statement 0 ---
+Statement:
+  Source:
+    identifier: salarios
+    csvFile: salarios.csv
+    sourceIdentifier: NULL
+    projection: ["Departamento", "Salario"]
+
+--- Statement 1 ---
+Statement:
+  Chart:
+    title: Máximo salario por departamento
+    type: BAR
+    xColumn: Departamento
+    yExpression:
+      max("Salario")
+    yAlias: NULL
+    id: max_salarios_chart
+    colors: [#FF5733, #33FF57, #3357FF]
+    sources:
+      Source:
+        identifier: NULL
+        csvFile: NULL
+        sourceIdentifier: salarios
+==========
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generated Chart</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .chart-container { margin: 20px 0; max-width: 800px; }
+        </style>
+    </head>
+    <body>
+    <div class="chart-container">
+        <canvas id="max_salarios_chart"></canvas>
+    </div>
+    <script>
+        const ctx_max_salarios_chart = document.getElementById('max_salarios_chart').getContext('2d');
+        new Chart(ctx_max_salarios_chart, {
+            type: 'bar',
+            data: {
+                labels: ['Ventas', 'Marketing', 'IT'],
+                datasets: [{
+                    label: 'Salario',
+                    data: [3100.000000, 3300.000000, 4500.000000],
+                    backgroundColor: ['#FF5733', '#33FF57', '#3357FF'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Máximo salario por departamento'
+                    }
+                }
+            }
+        });
+    </script>
+    </body>
+</html>
+[[0;35mDEBUG[0m][Frontend] Destroying module: Frontend...
+
+</pre>
+<h2>13-sum_chart</h2>
+<pre>
+[[0;35mDEBUG[0m][Frontend] Parsing...
+[[0;35mDEBUG[0m][Frontend] Compilation status: SUCCEEDED.
+[[0;35mDEBUG[0m][Frontend] Parsing is done.
+=== AST ===
+
+--- Statement 0 ---
+Statement:
+  Source:
+    identifier: ventas_totales
+    csvFile: ventas_sum.csv
+    sourceIdentifier: NULL
+    projection: ["Mes", "Monto"]
+
+--- Statement 1 ---
+Statement:
+  Chart:
+    title: Suma total de ventas por mes
+    type: BAR
+    xColumn: Mes
+    yExpression:
+      sum("Monto")
+    yAlias: NULL
+    id: grafico_suma
+    colors: [#E67E22]
+    sources:
+      Source:
+        identifier: NULL
+        csvFile: NULL
+        sourceIdentifier: ventas_totales
+==========
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generated Chart</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .chart-container { margin: 20px 0; max-width: 800px; }
+        </style>
+    </head>
+    <body>
+    <div class="chart-container">
+        <canvas id="grafico_suma"></canvas>
+    </div>
+    <script>
+        const ctx_grafico_suma = document.getElementById('grafico_suma').getContext('2d');
+        new Chart(ctx_grafico_suma, {
+            type: 'bar',
+            data: {
+                labels: ['Enero', 'Febrero', 'Marzo'],
+                datasets: [{
+                    label: 'Monto',
+                    data: [300.000000, 400.000000, 350.000000],
+                    backgroundColor: ['#E67E22', '#E67E22', '#E67E22'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Suma total de ventas por mes'
+                    }
+                }
+            }
+        });
+    </script>
+    </body>
+</html>
+[[0;35mDEBUG[0m][Frontend] Destroying module: Frontend...
+
+</pre>
+<h2>14-min_chart</h2>
+<pre>
+[[0;35mDEBUG[0m][Frontend] Parsing...
+[[0;35mDEBUG[0m][Frontend] Compilation status: SUCCEEDED.
+[[0;35mDEBUG[0m][Frontend] Parsing is done.
+=== AST ===
+
+--- Statement 0 ---
+Statement:
+  Source:
+    identifier: clima
+    csvFile: temperaturas_min.csv
+    sourceIdentifier: NULL
+    projection: ["Ciudad", "Temperatura"]
+
+--- Statement 1 ---
+Statement:
+  Chart:
+    title: Temperatura mínima registrada por ciudad
+    type: LINE
+    xColumn: Ciudad
+    yExpression:
+      min("Temperatura")
+    yAlias: NULL
+    id: grafico_minimo
+    colors: [#16A085]
+    sources:
+      Source:
+        identifier: NULL
+        csvFile: NULL
+        sourceIdentifier: clima
+==========
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generated Chart</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .chart-container { margin: 20px 0; max-width: 800px; }
+        </style>
+    </head>
+    <body>
+    <div class="chart-container">
+        <canvas id="grafico_minimo"></canvas>
+    </div>
+    <script>
+        const ctx_grafico_minimo = document.getElementById('grafico_minimo').getContext('2d');
+        new Chart(ctx_grafico_minimo, {
+            type: 'line',
+            data: {
+                labels: ['Madrid', 'Buenos Aires', 'Tokio'],
+                datasets: [{
+                    label: 'Temperatura',
+                    data: [8.000000, 18.000000, 5.000000],
+                    backgroundColor: ['#16A085', '#16A085', '#16A085'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Temperatura mínima registrada por ciudad'
+                    }
+                }
+            }
+        });
+    </script>
+    </body>
+</html>
+[[0;35mDEBUG[0m][Frontend] Destroying module: Frontend...
+
+</pre>
+</body>
+</html>

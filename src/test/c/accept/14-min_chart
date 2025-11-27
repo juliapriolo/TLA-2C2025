@@ -1,0 +1,9 @@
+source clima = from "temperaturas_min.csv"
+    project ["Ciudad", "Temperatura"];
+
+chart "Temperatura mínima registrada por ciudad" type line:
+  from clima,
+  x = "Ciudad",
+  y = min("Temperatura"),
+  colors = [#16A085],
+  id = "grafico_minimo";

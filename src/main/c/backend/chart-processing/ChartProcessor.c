@@ -535,113 +535,228 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 		}
 	}
 	if (hasAggregation) {
+/* --- obtener info de la agregación --- */
+	AggregateFunction aggFunction;
+	char * aggColumn = NULL;
+	if (!_getAggregationInfo(chart->yExpression, &aggFunction, &aggColumn)) {
+		logError(_logger, "Cannot extract aggregation info from expression");
+		if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
+			destroyCSVData(finalData);
+		}
+		free(chartData);
+		return NULL;
+	}
 
-    	AggregateFunction aggFunction;
-    	char * aggColumn = NULL;
+	/* obtener índices relevantes */
+	int xIdx = -1;
+	if (chart->xColumn != NULL) {
+		for (size_t i = 0; i < finalData->headerCount; i++) {
+			if (finalData->headers[i] != NULL && strcmp(finalData->headers[i], chart->xColumn) == 0) {
+				xIdx = (int)i;
+				break;
+			}
+		}
+	}
+	int yIdx = -1;
+	if (aggColumn != NULL) {
+		yIdx = getColumnIndex(finalData, aggColumn);  // -1 si no existe
+	}
 
-    	if (!_getAggregationInfo(chart->yExpression, &aggFunction, &aggColumn)) {
-        	logError(_logger, "Cannot extract aggregation info");
-        	if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
-            	destroyCSVData(finalData);
-        	}
-        	free(chartData);
-        	return NULL;
-    	}
+	/* --- estructuras dinámicas para agrupar --- */
+	size_t capacity = 8;
+	size_t groupCount = 0;
+	char ** labels = (char **) malloc(sizeof(char*) * (capacity + 1)); // +1 para NULL terminator
+	double * values = (double *) malloc(sizeof(double) * capacity);
+	size_t * counts = (size_t *) malloc(sizeof(size_t) * capacity); // para AVG (y opcionalmente para COUNT)
+	if (labels == NULL || values == NULL || counts == NULL) {
+		logError(_logger, "Out of memory while allocating grouping structures");
+		free(labels); free(values); free(counts);
+		if (_shouldFreeCSVData(finalData, chart, sourceListCount)) destroyCSVData(finalData);
+		free(chartData);
+		return NULL;
+	}
+	/* inicializar */
+	for (size_t i = 0; i < capacity; ++i) {
+		labels[i] = NULL;
+		values[i] = 0.0;
+		counts[i] = 0;
+	}
+	labels[capacity] = NULL;
 
-    	if (xColumnIndex < 0) {
-        	logError(_logger, "Grouping requires xColumn");
-        	if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
-            	destroyCSVData(finalData);
-        	}
-        	free(chartData);
-        	return NULL;
-    	}
+	/* --- recorrer filas y agrupar --- */
+	CSVRow * cur = finalData->rows;
+	while (cur != NULL) {
+		const char * xVal = (xIdx >= 0) ? getCellValue(cur, (size_t)xIdx) : "";
+		/* si xVal es NULL, usar cadena vacía para agrupar */
+		if (xVal == NULL) xVal = "";
 
-    	// Prealocamos espacio para un máximo posible igual a rowCount
-    	size_t maxGroups = finalData->rowCount;
-    	chartData->labels = calloc(maxGroups + 1, sizeof(char*));
-    	chartData->values = calloc(maxGroups, sizeof(double));
+		/* buscar grupo existente */
+		size_t foundPos = (size_t)-1;
+		for (size_t p = 0; p < groupCount; ++p) {
+			if (labels[p] != NULL && strcmp(labels[p], xVal) == 0) {
+				foundPos = p;
+				break;
+			}
+		}
 
-    	if (chartData->labels == NULL || chartData->values == NULL) {
-        	if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
-            	destroyCSVData(finalData);
-        	}
-        	free(chartData);
-        	return NULL;
-    	}
+		/* si no existe, crearlo */
+		if (foundPos == (size_t)-1) {
+			/* expandir si es necesario */
+			if (groupCount == capacity) {
+				size_t newCap = capacity * 2;
+				char ** l2 = (char **) realloc(labels, sizeof(char*) * (newCap + 1));
+				double * v2 = (double *) realloc(values, sizeof(double) * newCap);
+				size_t * c2 = (size_t *) realloc(counts, sizeof(size_t) * newCap);
+				if (l2 == NULL || v2 == NULL || c2 == NULL) {
+					logError(_logger, "Out of memory while expanding grouping structures");
+					/* liberar parcial */
+					free(l2); free(v2); free(c2);
+					for (size_t i = 0; i < groupCount; ++i) free(labels[i]);
+					free(labels); free(values); free(counts);
+					if (_shouldFreeCSVData(finalData, chart, sourceListCount)) destroyCSVData(finalData);
+					free(chartData);
+					return NULL;
+				}
+				labels = l2; values = v2; counts = c2;
+				/* inicializar nuevas celdas */
+				for (size_t i = capacity; i < newCap; ++i) {
+					labels[i] = NULL;
+					values[i] = 0.0;
+					counts[i] = 0;
+				}
+				capacity = newCap;
+				labels[capacity] = NULL;
+			}
 
-    	size_t groupCount = 0;
+			labels[groupCount] = strdup(xVal ? xVal : "");
+			if (labels[groupCount] == NULL) {
+				logError(_logger, "Out of memory while duplicating label");
+				for (size_t i = 0; i < groupCount; ++i) free(labels[i]);
+				free(labels); free(values); free(counts);
+				if (_shouldFreeCSVData(finalData, chart, sourceListCount)) destroyCSVData(finalData);
+				free(chartData);
+				return NULL;
+			}
 
-    	int yColumnIndex = getColumnIndex(finalData, aggColumn);
-    	if (yColumnIndex < 0) {
-        	logError(_logger, "Column for aggregation not found: %s", aggColumn);
-        	if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
-            	destroyCSVData(finalData);
-        	}
-        	free(chartData->labels);
-        	free(chartData->values);
-        	free(chartData);
-        	return NULL;
-    	}
+			/* inicializar valor según el tipo de agregación */
+			if (aggFunction == AGG_COUNT) {
+				values[groupCount] = 1.0;
+				counts[groupCount] = 1;
+			} else if (aggFunction == AGG_SUM) {
+				double yv = 0.0;
+				if (yIdx >= 0) {
+					const char * cell = getCellValue(cur, (size_t)yIdx);
+					if (cell) yv = atof(cell);
+				}
+				values[groupCount] = yv;
+				counts[groupCount] = 1;
+			} else if (aggFunction == AGG_MIN || aggFunction == AGG_MAX) {
+				double yv = 0.0;
+				if (yIdx >= 0) {
+					const char * cell = getCellValue(cur, (size_t)yIdx);
+					if (cell) yv = atof(cell);
+				}
+				values[groupCount] = yv;
+				counts[groupCount] = 1;
+			} else if (aggFunction == AGG_AVERAGE) {
+				double yv = 0.0;
+				if (yIdx >= 0) {
+					const char * cell = getCellValue(cur, (size_t)yIdx);
+					if (cell) yv = atof(cell);
+				}
+				values[groupCount] = yv; // acumulador (sum)
+				counts[groupCount] = 1;   // contador
+			} else {
+				/* guard: si llega otra función desconocida */
+				logError(_logger, "Unsupported aggregation function");
+				for (size_t i = 0; i < groupCount; ++i) free(labels[i]);
+				free(labels); free(values); free(counts);
+				if (_shouldFreeCSVData(finalData, chart, sourceListCount)) destroyCSVData(finalData);
+				free(chartData);
+				return NULL;
+			}
 
-    	CSVRow * current = finalData->rows;
-    	while (current != NULL) {
+			foundPos = groupCount;
+			groupCount++;
+		} else {
+			/* actualizar grupo existente */
+			if (aggFunction == AGG_COUNT) {
+				values[foundPos] += 1.0;
+				counts[foundPos] += 1;
+			} else if (aggFunction == AGG_SUM) {
+				double yv = 0.0;
+				if (yIdx >= 0) {
+					const char * cell = getCellValue(cur, (size_t)yIdx);
+					if (cell) yv = atof(cell);
+				}
+				values[foundPos] += yv;
+				counts[foundPos] += 1;
+			} else if (aggFunction == AGG_MIN) {
+				double yv = 0.0;
+				if (yIdx >= 0) {
+					const char * cell = getCellValue(cur, (size_t)yIdx);
+					if (cell) yv = atof(cell);
+				}
+				if (counts[foundPos] == 0 || yv < values[foundPos]) values[foundPos] = yv;
+				counts[foundPos] += 1;
+			} else if (aggFunction == AGG_MAX) {
+				double yv = 0.0;
+				if (yIdx >= 0) {
+					const char * cell = getCellValue(cur, (size_t)yIdx);
+					if (cell) yv = atof(cell);
+				}
+				if (counts[foundPos] == 0 || yv > values[foundPos]) values[foundPos] = yv;
+				counts[foundPos] += 1;
+			} else if (aggFunction == AGG_AVERAGE) {
+				double yv = 0.0;
+				if (yIdx >= 0) {
+					const char * cell = getCellValue(cur, (size_t)yIdx);
+					if (cell) yv = atof(cell);
+				}
+				values[foundPos] += yv;    // acumular suma
+				counts[foundPos] += 1;     // contar
+			}
+		}
 
-        	// clave de agrupación
-        	const char * xValue = getCellValue(current, (size_t)xColumnIndex);
-        	const char * yValue = getCellValue(current, (size_t)yColumnIndex);
-        	double y = atof(yValue);
+		cur = cur->next;
+	}
 
-        	// Buscar si ya existe el grupo
-        	size_t pos = 0;
-        	bool found = false;
+	/* --- si es AVG, convertir sum -> promedio --- */
+	if (aggFunction == AGG_AVERAGE) {
+		for (size_t i = 0; i < groupCount; ++i) {
+			if (counts[i] > 0) {
+				values[i] = values[i] / (double)counts[i];
+			}
+		}
+	}
 
-        	for (pos = 0; pos < groupCount; pos++) {
-            	if (strcmp(chartData->labels[pos], xValue) == 0) {
-                	found = true;
-                	break;
-            	}
-        	}
+	/* --- preparar chartData para devolver --- */
+	chartData->dataCount = groupCount;
+	chartData->labels = calloc(groupCount + 1, sizeof(char*));
+	chartData->values = calloc(groupCount, sizeof(double));
+	if (chartData->labels == NULL || chartData->values == NULL) {
+		logError(_logger, "Out of memory while finalizing chart data");
+		for (size_t i = 0; i < groupCount; ++i) free(labels[i]);
+		free(labels); free(values); free(counts);
+		if (_shouldFreeCSVData(finalData, chart, sourceListCount)) destroyCSVData(finalData);
+		free(chartData);
+		return NULL;
+	}
+	for (size_t i = 0; i < groupCount; ++i) {
+		chartData->labels[i] = labels[i];   // transfer ownership
+		chartData->values[i] = values[i];
+	}
+	chartData->labels[groupCount] = NULL;
 
-        	if (!found) {
-            	// Nuevo grupo
-            	chartData->labels[groupCount] = strdup(xValue);
-            	chartData->values[groupCount] = y;
-            	groupCount++;
-        	} else {
-            	// Actualizar el grupo existente según función
-            	switch (aggFunction) {
-                	case AGG_MIN:
-                    	if (y < chartData->values[pos]) chartData->values[pos] = y;
-                    	break;
+	/* yLabel */
+	if (chart->yAlias != NULL) {
+		chartData->yLabel = strdup(chart->yAlias);
+	} else {
+		chartData->yLabel = aggColumn != NULL ? strdup(aggColumn) : strdup("Value");
+	}
 
-                	case AGG_MAX:
-                    	if (y > chartData->values[pos]) chartData->values[pos] = y;
-                    	break;
-
-                	case AGG_SUM:
-                    	chartData->values[pos] += y;
-                    	break;
-
-                	case AGG_COUNT:
-                    	chartData->values[pos] += 1;
-                    	break;
-
-                	default:
-                    	logError(_logger, "Unsupported aggregation function except MIN/MAX/SUM/COUNT");
-                    	break;
-            	}
-        	}
-
-        	current = current->next;
-    	}
-
-    	// Cerrar la lista
-    	chartData->labels[groupCount] = NULL;
-    	chartData->dataCount = groupCount;
-
-    	// Nombre del eje Y
-    	chartData->yLabel = strdup(aggColumn);
+	/* liberar arrays temporales (labels[] transferred) */
+	free(labels); free(values); free(counts);
 	}else {
 		// Modo normal: evaluar expresión Y para cada fila
 		CSVRow * current = finalData->rows;

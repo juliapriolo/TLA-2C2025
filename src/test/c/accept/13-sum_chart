@@ -1,0 +1,9 @@
+source ventas_totales = from "ventas_sum.csv"
+    project ["Mes", "Monto"];
+
+chart "Suma total de ventas por mes" type bar:
+  from ventas_totales,
+  x = "Mes",
+  y = sum("Monto"),
+  colors = [#E67E22],
+  id = "grafico_suma";
