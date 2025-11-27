@@ -1,0 +1,72 @@
+[[0;35mDEBUG[0m][Frontend] Parsing...
+[[0;35mDEBUG[0m][Frontend] Compilation status: SUCCEEDED.
+[[0;35mDEBUG[0m][Frontend] Parsing is done.
+=== AST ===
+
+--- Statement 0 ---
+Statement:
+  Source:
+    identifier: votos_contados
+    csvFile: votos.csv
+    sourceIdentifier: NULL
+    projection: ["Partido_Político_Votado"]
+
+--- Statement 1 ---
+Statement:
+  Chart:
+    title: Votos por Partido
+    type: PIE
+    xColumn: Partido_Político_Votado
+    yExpression:
+      count("Partido_Político_Votado")
+    yAlias: NULL
+    id: grafico_votos
+    colors: [#FF5733, #33FF57, #3357FF]
+    sources:
+      Source:
+        identifier: NULL
+        csvFile: NULL
+        sourceIdentifier: votos_contados
+==========
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generated Chart</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .chart-container { margin: 20px 0; max-width: 800px; }
+        </style>
+    </head>
+    <body>
+    <div class="chart-container">
+        <canvas id="grafico_votos"></canvas>
+    </div>
+    <script>
+        const ctx_grafico_votos = document.getElementById('grafico_votos').getContext('2d');
+        new Chart(ctx_grafico_votos, {
+            type: 'pie',
+            data: {
+                labels: [' Partido A', ' Partido B', ' Partido C'],
+                datasets: [{
+                    label: 'Partido_Político_Votado',
+                    data: [3.000000, 2.000000, 1.000000],
+                    backgroundColor: ['#FF5733', '#33FF57', '#3357FF'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Votos por Partido'
+                    }
+                }
+            }
+        });
+    </script>
+    </body>
+</html>
+[[0;35mDEBUG[0m][Frontend] Destroying module: Frontend...

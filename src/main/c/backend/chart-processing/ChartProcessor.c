@@ -534,47 +534,115 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 			}
 		}
 	}
-	
 	if (hasAggregation) {
-		// Modo agregación: agrupar por X y agregar Y
-		AggregateFunction aggFunction;
-		char * aggColumn = NULL;
-		if (!_getAggregationInfo(chart->yExpression, &aggFunction, &aggColumn)) {
-			logError(_logger, "Cannot extract aggregation info from expression");
-			if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
-				destroyCSVData(finalData);
-			}
-			free(chartData);
-			return NULL;
-		}
-		
-		// Por ahora, simplificamos: si hay agregación, solo retornamos un valor agregado
-		// En una implementación completa, habría que agrupar por X
-		// Por simplicidad, asumimos que hay una sola fila o que queremos el total
-		double aggregatedValue = applyAggregation(finalData, aggColumn, aggFunction);
-		
-		chartData->dataCount = 1;
-		chartData->labels = calloc(2, sizeof(char*));
-		chartData->values = calloc(1, sizeof(double));
-		
-		if (chartData->labels == NULL || chartData->values == NULL) {
-			if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
-				destroyCSVData(finalData);
-			}
-			free(chartData);
-			return NULL;
-		}
-		
-		chartData->labels[0] = chart->title != NULL ? strdup(chart->title) : strdup("Total");
-		chartData->labels[1] = NULL;
-		chartData->values[0] = aggregatedValue;
-		
-		if (chart->yAlias != NULL) {
-			chartData->yLabel = strdup(chart->yAlias);
-		} else {
-			chartData->yLabel = aggColumn != NULL ? strdup(aggColumn) : strdup("Value");
-		}
-	} else {
+
+    	AggregateFunction aggFunction;
+    	char * aggColumn = NULL;
+
+    	if (!_getAggregationInfo(chart->yExpression, &aggFunction, &aggColumn)) {
+        	logError(_logger, "Cannot extract aggregation info");
+        	if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
+            	destroyCSVData(finalData);
+        	}
+        	free(chartData);
+        	return NULL;
+    	}
+
+    	if (xColumnIndex < 0) {
+        	logError(_logger, "Grouping requires xColumn");
+        	if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
+            	destroyCSVData(finalData);
+        	}
+        	free(chartData);
+        	return NULL;
+    	}
+
+    	// Prealocamos espacio para un máximo posible igual a rowCount
+    	size_t maxGroups = finalData->rowCount;
+    	chartData->labels = calloc(maxGroups + 1, sizeof(char*));
+    	chartData->values = calloc(maxGroups, sizeof(double));
+
+    	if (chartData->labels == NULL || chartData->values == NULL) {
+        	if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
+            	destroyCSVData(finalData);
+        	}
+        	free(chartData);
+        	return NULL;
+    	}
+
+    	size_t groupCount = 0;
+
+    	int yColumnIndex = getColumnIndex(finalData, aggColumn);
+    	if (yColumnIndex < 0) {
+        	logError(_logger, "Column for aggregation not found: %s", aggColumn);
+        	if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
+            	destroyCSVData(finalData);
+        	}
+        	free(chartData->labels);
+        	free(chartData->values);
+        	free(chartData);
+        	return NULL;
+    	}
+
+    	CSVRow * current = finalData->rows;
+    	while (current != NULL) {
+
+        	// clave de agrupación
+        	const char * xValue = getCellValue(current, (size_t)xColumnIndex);
+        	const char * yValue = getCellValue(current, (size_t)yColumnIndex);
+        	double y = atof(yValue);
+
+        	// Buscar si ya existe el grupo
+        	size_t pos = 0;
+        	bool found = false;
+
+        	for (pos = 0; pos < groupCount; pos++) {
+            	if (strcmp(chartData->labels[pos], xValue) == 0) {
+                	found = true;
+                	break;
+            	}
+        	}
+
+        	if (!found) {
+            	// Nuevo grupo
+            	chartData->labels[groupCount] = strdup(xValue);
+            	chartData->values[groupCount] = y;
+            	groupCount++;
+        	} else {
+            	// Actualizar el grupo existente según función
+            	switch (aggFunction) {
+                	case AGG_MIN:
+                    	if (y < chartData->values[pos]) chartData->values[pos] = y;
+                    	break;
+
+                	case AGG_MAX:
+                    	if (y > chartData->values[pos]) chartData->values[pos] = y;
+                    	break;
+
+                	case AGG_SUM:
+                    	chartData->values[pos] += y;
+                    	break;
+
+                	case AGG_COUNT:
+                    	chartData->values[pos] += 1;
+                    	break;
+
+                	default:
+                    	logError(_logger, "Unsupported aggregation function except MIN/MAX/SUM/COUNT");
+                    	break;
+            	}
+        	}
+
+        	current = current->next;
+    	}
+
+    	// Cerrar la lista
+    	chartData->labels[groupCount] = NULL;
+    	chartData->dataCount = groupCount;
+
+    	// Nombre del eje Y
+    	chartData->yLabel = strdup(aggColumn);
+	}else {
 		// Modo normal: evaluar expresión Y para cada fila
 		CSVRow * current = finalData->rows;
 		size_t count = 0;
