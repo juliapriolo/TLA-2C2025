@@ -248,6 +248,12 @@ static void _generateChartJS(Chart * chart, ChartData * chartData, const char * 
 	
 	_output(4, "}]\n");
 	_output(3, "},\n");
+	
+	// Agregar plugin ChartDataLabels para pie y donut charts
+	if (chart->type == CHART_PIE || chart->type == CHART_DONUT) {
+		_output(3, "plugins: [ChartDataLabels],\n");
+	}
+	
 	_output(3, "options: {\n");
 	_output(4, "responsive: true,\n");
 	_output(4, "plugins: {\n");
@@ -260,6 +266,24 @@ static void _generateChartJS(Chart * chart, ChartData * chartData, const char * 
 		_output(5, ",\n");
 		_output(5, "legend: {\n");
 		_output(6, "position: '%s'\n", chart->legendPosition);
+		_output(5, "}\n");
+	}
+	
+	// Agregar configuración de datalabels para pie y donut charts
+	if (chart->type == CHART_PIE || chart->type == CHART_DONUT) {
+		_output(5, ",\n");
+		_output(5, "datalabels: {\n");
+		_output(6, "color: '#fff',\n");
+		_output(6, "font: {\n");
+		_output(7, "weight: 'bold',\n");
+		_output(7, "size: 14\n");
+		_output(6, "},\n");
+		_output(6, "formatter: (value, ctx) => {\n");
+		_output(7, "const dataArr = ctx.chart.data.datasets[0].data;\n");
+		_output(7, "const total = dataArr.reduce((a, b) => a + b, 0);\n");
+		_output(7, "const percentage = ((value / total) * 100).toFixed(1);\n");
+		_output(7, "return percentage + \"%\";\n");
+		_output(6, "}\n");
 		_output(5, "}\n");
 	}
 	
@@ -329,6 +353,7 @@ static void _generateHTMLPrologue(void) {
 	_output(2, "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n");
 	_output(2, "<title>Generated Chart</title>\n");
 	_output(2, "<script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>\n");
+	_output(2, "<script src=\"https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2\"></script>\n");
 	_output(2, "<style>\n");
 	_output(3, "body { font-family: Arial, sans-serif; margin: 20px; }\n");
 	_output(3, ".chart-container { margin: 20px 0; max-width: 800px; }\n");
