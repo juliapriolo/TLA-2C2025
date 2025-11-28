@@ -64,6 +64,15 @@ Executes every available unit-test under `src/test/c` folder:
 src/main/bash/test.sh
 ```
 
+#### Run a single test
+
+To execute a specific test and save its output to an HTML file:
+
+```bash
+bash src/main/bash/run.sh src/test/c/accept/14-min_chart > output.html
+```
+Where `src/test/c/accept/14-min_chart` is the path to the test file and `output.html` is the file where the generated HTML output will be saved.
+
 ### Stop
 
 Logout, destroy the ephemeral containers and shutdowns the cluster:
