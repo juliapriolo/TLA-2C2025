@@ -1,12 +1,12 @@
 #include "String.h"
 
-/* PRIVATE FUNCTIONS */
+/* FUNCIONES PRIVADAS */
 
 static const char * _controlCharacterToEscapedString(const char character);
 
 /**
- * Returns a read-only string that represents the escaped sequence of the
- * control character. If the character is not a control, then returns NULL.
+ * Retorna una cadena de solo lectura que representa la secuencia escapada
+ * del carácter de control. Si el carácter no es de control, retorna NULL.
  */
 static const char * _controlCharacterToEscapedString(const char character) {
 	switch (character) {
@@ -48,7 +48,7 @@ static const char * _controlCharacterToEscapedString(const char character) {
 	}
 }
 
-/* PUBLIC FUNCTIONS */
+/* FUNCIONES PÚBLICAS */
 
 char * concatenate(const unsigned int count, ...) {
 	va_list arguments;

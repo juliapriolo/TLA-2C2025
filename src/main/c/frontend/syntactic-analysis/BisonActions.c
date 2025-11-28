@@ -120,17 +120,15 @@ static void _registerSemanticError(const char * format, ...) {
 	}
 }
 
-/** Shutdown module's internal state. */
+/** Cierra el estado interno del módulo. */
 void _shutdownBisonActionsModule() {
 	if (_logger != NULL) {
-		// logDebugging(_logger, "Destroying module: BisonActions...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
 	_clearSourceIdentifiers();
 	_clearSemanticErrors();
 	_compilerState = NULL;
-	// Liberar alias pendiente si existe
 	if (_pendingYAlias != NULL) {
 		free(_pendingYAlias);
 		_pendingYAlias = NULL;
@@ -145,20 +143,19 @@ ModuleDestructor initializeBisonActionsModule(CompilerState * compilerState) {
 	return _shutdownBisonActionsModule;
 }
 
-/* IMPORTED FUNCTIONS */
+/* FUNCIONES IMPORTADAS */
 
-/* PRIVATE FUNCTIONS */
+/* FUNCIONES PRIVADAS */
 
 static void _logSyntacticAnalyzerAction(const char * functionName);
 
 /**
- * Logs a syntactic-analyzer action in DEBUGGING level.
+ * Registra una acción del analizador sintáctico en nivel DEBUGGING.
  */
 static void _logSyntacticAnalyzerAction(const char * functionName) {
-//	logDebugging(_logger, "%s", functionName);
 }
 
-/* PUBLIC FUNCTIONS */
+/* FUNCIONES PÚBLICAS */
 
 Constant * IntegerConstantSemanticAction(const int value) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
@@ -240,7 +237,7 @@ AggregateFunction AggregateFunctionSemanticAction(TokenLabel token) {
 		case SUM:
 			return AGG_SUM;
 		default:
-			return AGG_AVERAGE; // default
+			return AGG_AVERAGE;
 	}
 }
 
@@ -252,7 +249,7 @@ Program * ExpressionProgramSemanticAction(Expression * expression) {
 	return program;
 }
 
-// Funciones auxiliares para convertir tokens a enums
+/* Funciones auxiliares para convertir tokens a enums */
 
 ChartType ChartTypeSemanticAction(TokenLabel token) {
 	switch (token) {
@@ -261,7 +258,7 @@ ChartType ChartTypeSemanticAction(TokenLabel token) {
 		case DONUT: return CHART_DONUT;
 		case SCATTER: return CHART_SCATTER;
 		case LINE: return CHART_LINE;
-		default: return CHART_BAR; // default
+		default: return CHART_BAR;
 	}
 }
 
@@ -272,11 +269,11 @@ FilterOperator FilterOperatorSemanticAction(TokenLabel token) {
 		case LT: return FILTER_LT;
 		case GE: return FILTER_GE;
 		case LE: return FILTER_LE;
-		default: return FILTER_EQ; // default
+		default: return FILTER_EQ;
 	}
 }
 
-// Construcción de nodos del AST
+/* Construcción de nodos del AST */
 
 FilterCondition * FilterConditionSemanticAction(char * columnName, TokenLabel operator, char * stringValue) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
@@ -305,7 +302,6 @@ Source * SourceSemanticAction(char * identifier, char * csvFile, char * sourceId
 			_rememberSourceIdentifier(identifier);
 		}
 	}
-	// Validar que si se usa sourceIdentifier, ese source existe
 	if (sourceIdentifier != NULL && !_sourceIdentifierExists(sourceIdentifier)) {
 		_registerSemanticError("Source identifier \"%s\" not found.", sourceIdentifier);
 		return NULL;
@@ -315,7 +311,6 @@ Source * SourceSemanticAction(char * identifier, char * csvFile, char * sourceId
 
 Chart * ChartSemanticAction(char * title, ChartType type, Source * sources, char * xColumn, Expression * yExpression, char * yAlias) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
-	// Validar que el chart tenga al menos un source
 	if (sources == NULL) {
 		_registerSemanticError("Chart must have at least one source.");
 		return NULL;
@@ -376,7 +371,6 @@ Program * ProgramFromStatementsSemanticAction(Statement * statements) {
 
 void SetCurrentChart(Chart * chart) {
 	_currentChart = chart;
-	// Si hay un alias Y pendiente, asignarlo ahora
 	if (_currentChart != NULL && _pendingYAlias != NULL) {
 		_currentChart->yAlias = _pendingYAlias;
 		_pendingYAlias = NULL;
@@ -387,32 +381,25 @@ void SetChartId(char * id) {
 	if (_currentChart != NULL && id != NULL) {
 		_currentChart->id = id;
 	} else if (id != NULL) {
-		// Si no hay chart actual, liberar el id para evitar leak
 		free(id);
 	}
 }
 
 void SetChartYAlias(char * alias) {
 	if (_currentChart != NULL && alias != NULL) {
-		// Copiar el alias para que sea propiedad del chart
 		_currentChart->yAlias = strdup(alias);
-		// Liberar el original ya que lo copiamos
 		free(alias);
 	} else if (alias != NULL) {
-		// Si no hay chart actual todavía, guardar el alias para asignarlo después
-		// Liberar cualquier alias pendiente anterior
 		if (_pendingYAlias != NULL) {
 			free(_pendingYAlias);
 		}
 		_pendingYAlias = strdup(alias);
-		// Liberar el original ya que lo copiamos
 		free(alias);
 	}
 }
 
 void SetChartOrientation(TokenLabel orientation) {
 	if (_currentChart != NULL) {
-		// Convertir el token a string
 		const char * orientationStr = NULL;
 		if (orientation == VERTICAL) {
 			orientationStr = "vertical";
@@ -427,14 +414,12 @@ void SetChartOrientation(TokenLabel orientation) {
 
 void SetChartColors(char ** colors, size_t colorCount) {
 	if (_currentChart != NULL && colors != NULL && colorCount > 0) {
-		// Copiar el array de colores
 		char ** copiedColors = calloc(colorCount + 1, sizeof(char*));
 		if (copiedColors != NULL) {
 			for (size_t i = 0; i < colorCount; ++i) {
 				if (colors[i] != NULL) {
 					copiedColors[i] = strdup(colors[i]);
 					if (copiedColors[i] == NULL) {
-						// Si falla, liberar lo que ya se copió
 						for (size_t j = 0; j < i; ++j) {
 							free(copiedColors[j]);
 						}
@@ -460,11 +445,9 @@ void SetChartSingleColor(char * color) {
 
 void SetChartXRange(double * range) {
 	if (_currentChart != NULL && range != NULL) {
-		// Liberar rango anterior si existe
 		if (_currentChart->xRange != NULL) {
 			free(_currentChart->xRange);
 		}
-		// Copiar el rango
 		double * copiedRange = calloc(2, sizeof(double));
 		if (copiedRange != NULL) {
 			copiedRange[0] = range[0];
@@ -476,11 +459,9 @@ void SetChartXRange(double * range) {
 
 void SetChartYRange(double * range) {
 	if (_currentChart != NULL && range != NULL) {
-		// Liberar rango anterior si existe
 		if (_currentChart->yRange != NULL) {
 			free(_currentChart->yRange);
 		}
-		// Copiar el rango
 		double * copiedRange = calloc(2, sizeof(double));
 		if (copiedRange != NULL) {
 			copiedRange[0] = range[0];
@@ -492,7 +473,6 @@ void SetChartYRange(double * range) {
 
 void SetChartLegendPosition(TokenLabel position) {
 	if (_currentChart != NULL) {
-		// Convertir el token a string
 		const char * positionStr = NULL;
 		switch (position) {
 			case TOP: positionStr = "top"; break;
@@ -532,7 +512,6 @@ bool ValidateProgramSemantics(Program * program) {
 		return ok;
 	}
 
-	/* Verificar IDs duplicados en charts */
 	size_t idCount = 0;
 	size_t idCapacity = 4;
 	char ** seenIds = (char **) calloc(idCapacity, sizeof(char *));
@@ -564,7 +543,6 @@ bool ValidateProgramSemantics(Program * program) {
 						break;
 					}
 					seenIds = resized;
-					/* Inicializar nuevos slots */
 					for (size_t j = idCapacity; j < newCapacity; ++j) {
 						seenIds[j] = NULL;
 					}

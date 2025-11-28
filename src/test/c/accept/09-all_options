@@ -1,7 +1,7 @@
 chart "Gráfico con todas las opciones" type bar:
-  from "datos.csv",
+  from "gastosmensuales.csv",
   x = "Categoria",
-  y = "Valor",
+  y = "Gasto",
   orientation = horizontal,
   colors = [#FF5733, #33FF57, #3357FF],
   legend = top,

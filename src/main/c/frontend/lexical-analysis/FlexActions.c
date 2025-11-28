@@ -5,17 +5,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* MODULE INTERNAL STATE */
+/* ESTADO INTERNO DEL MÓDULO */
 
 static bool _logIgnoredLexemes = true;
 static InputBuffer * _inputBuffer = NULL;
 static LexicalAnalyzer * _lexicalAnalyzer = NULL;
 static Logger * _logger = NULL;
 
-/** limpia y libera recursos del módulo (logger, input buffer) */
+/** Limpia y libera recursos del módulo. */
 void _shutdownFlexActionsModule() {
 	if (_logger != NULL) {
-		// logDebugging(_logger, "Destroying module: FlexActions...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
@@ -41,32 +40,27 @@ ModuleDestructor initializeFlexActionsModule(LexicalAnalyzer * lexicalAnalyzer) 
     return _shutdownFlexActionsModule;
 }
 
-/* PRIVATE FUNCTIONS */
+/* FUNCIONES PRIVADAS */
 
 static void _logTokenAction(const char * actionName, Token * token);
 
 /**
- * Logs a lexical-analyzer action over a token in DEBUGGING level.
+ * Registra una acción del analizador léxico sobre un token en nivel DEBUGGING.
  */
- /* imprime en el log info del token */
 static void _logTokenAction(const char * actionName, Token * token) {
-    // Logging disabled
     (void)actionName;
     (void)token;
 }
 
 
-/* Helper: store the semantic value bytes into the token field */
+/* Almacena los bytes del valor semántico en el campo del token */
 static void _setSemanticValue(Token * token, YYSTYPE value) {
 	if (token == NULL) return;
 	memcpy(&(token->semanticValue), &value, sizeof(YYSTYPE));
 }
 
 
-/* PUBLIC FUNCTIONS */
-/* cada una crea un token con la etiqueta LABEL correspondiente
- (ADD, SOURCE, GE, COMMA, etc)
-*/
+/* FUNCIONES PÚBLICAS */
 
 CompilationStatus ArithmeticOperatorLexemeAction(TokenLabel label) {
 	Token * token = createToken(_lexicalAnalyzer, label);
@@ -173,7 +167,6 @@ CompilationStatus ColorLexemeAction(void) {
 	if (token == NULL) return OUT_OF_MEMORY;
 
     if (token->lexeme != NULL) {
-        /* Guardar color como texto (ej: "#FFAABB") */
 		char * duplicated = strdup(token->lexeme);
 		if (duplicated == NULL) {
 			if (_logger) logError(_logger, "Out of memory while duplicating color lexeme.");
@@ -197,7 +190,6 @@ CompilationStatus IdentifierLexemeAction(void) {
 	if (token == NULL) return OUT_OF_MEMORY;
 
     if (token->lexeme != NULL) {
-        /* identifers no entrecomillados: duplicar tal cual */
 		char * duplicated = strdup(token->lexeme);
 		if (duplicated == NULL) {
 			if (_logger) logError(_logger, "Out of memory while duplicating identifier lexeme.");
@@ -217,7 +209,7 @@ CompilationStatus IdentifierLexemeAction(void) {
 }
 
 
-/* cambian el modo del scanner al contexto solicitado (coment o import_expresion)*/
+/* Cambian el modo del scanner al contexto solicitado */
 CompilationStatus EnterImportExpressionLexemeAction(FlexContext context) {
 	if (_logIgnoredLexemes && _logger) {
 		Token * token = createToken(_lexicalAnalyzer, OPEN_BRACE);
@@ -250,12 +242,10 @@ CompilationStatus EOFLexemeAction() {
 	CompilationStatus status = IN_PROGRESS;
 	Token * token = createToken(_lexicalAnalyzer, 0);
 	if (token == NULL) return OUT_OF_MEMORY;
-	_logTokenAction(__FUNCTION__, token);
+    _logTokenAction(__FUNCTION__, token);
 
-    /* Intentar consumir input buffer si existe; popInputBuffer devuelve true si hubo buffer */
     bool hadBuffer = false;
     if (_lexicalAnalyzer != NULL && popInputBuffer != NULL) {
-        /* Si popInputBuffer es función miembro, ajusta esta llamada según tu API */
         hadBuffer = popInputBuffer(_lexicalAnalyzer);
     }
 
@@ -359,7 +349,6 @@ CompilationStatus SubexpressionLexemeAction() {
 		return OUT_OF_MEMORY;
 	}
 
-    /* reemplazo seguro del buffer global */
     if (_inputBuffer != NULL) {
         destroyInputBuffer(_inputBuffer);
         _inputBuffer = NULL;

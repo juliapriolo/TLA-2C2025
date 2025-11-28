@@ -2,14 +2,13 @@
 #include <stdio.h>
 #include <string.h>
 
-/* MODULE INTERNAL STATE */
+/* ESTADO INTERNO DEL MÓDULO */
 
 static Logger * _logger = NULL;
 
-/** Shutdown module's internal state. */
+/** Cierra el estado interno del módulo. */
 void _shutdownCSVProcessorModule() {
 	if (_logger != NULL) {
-		// logDebugging(_logger, "Destroying module: CSVProcessor...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
@@ -20,7 +19,7 @@ ModuleDestructor initializeCSVProcessorModule() {
 	return _shutdownCSVProcessorModule;
 }
 
-/** PRIVATE FUNCTIONS */
+/** FUNCIONES PRIVADAS */
 
 /**
  * Parsea una línea CSV, manejando comillas y escapes
@@ -31,7 +30,6 @@ static char ** _parseCSVLine(const char * line, size_t * columnCount) {
 		return NULL;
 	}
 	
-	// Contar columnas (separadas por comas, respetando comillas)
 	size_t count = 1;
 	bool inQuotes = false;
 	for (const char * p = line; *p != '\0'; p++) {
@@ -48,7 +46,6 @@ static char ** _parseCSVLine(const char * line, size_t * columnCount) {
 		return NULL;
 	}
 	
-	// Parsear columnas
 	size_t colIndex = 0;
 	const char * start = line;
 	inQuotes = false;
@@ -63,7 +60,6 @@ static char ** _parseCSVLine(const char * line, size_t * columnCount) {
 				if (columns[colIndex] != NULL) {
 					strncpy(columns[colIndex], start, len);
 					columns[colIndex][len] = '\0';
-					// Remover comillas si existen
 					if (columns[colIndex][0] == '"' && columns[colIndex][len - 1] == '"') {
 						memmove(columns[colIndex], columns[colIndex] + 1, len - 2);
 						columns[colIndex][len - 2] = '\0';
@@ -98,7 +94,7 @@ static void _destroyCSVRow(CSVRow * row) {
 	}
 }
 
-/** PUBLIC FUNCTIONS */
+/** FUNCIONES PÚBLICAS */
 
 CSVData * readCSVFile(const char * filePath) {
 	if (filePath == NULL) {
@@ -118,11 +114,9 @@ CSVData * readCSVFile(const char * filePath) {
 		return NULL;
 	}
 	
-	char line[4096]; // Buffer para leer líneas
+	char line[4096];
 	
-	// Leer headers (primera línea)
 	if (fgets(line, sizeof(line), file) != NULL) {
-		// Remover newline
 		size_t len = strlen(line);
 		if (len > 0 && line[len - 1] == '\n') {
 			line[len - 1] = '\0';
@@ -146,10 +140,8 @@ CSVData * readCSVFile(const char * filePath) {
 		return NULL;
 	}
 	
-	// Leer filas
 	CSVRow * lastRow = NULL;
 	while (fgets(line, sizeof(line), file) != NULL) {
-		// Remover newline
 		size_t len = strlen(line);
 		if (len > 0 && line[len - 1] == '\n') {
 			line[len - 1] = '\0';
@@ -159,7 +151,6 @@ CSVData * readCSVFile(const char * filePath) {
 			line[len - 1] = '\0';
 		}
 		
-		// Saltar líneas vacías
 		if (strlen(line) == 0) {
 			continue;
 		}
@@ -188,7 +179,6 @@ CSVData * readCSVFile(const char * filePath) {
 	
 	fclose(file);
 	
-	// logDebugging(_logger, "CSV file loaded: %zu headers, %zu rows", data->headerCount, data->rowCount);
 	return data;
 }
 

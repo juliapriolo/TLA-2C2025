@@ -5,16 +5,15 @@
 #include <string.h>
 #include <stdio.h>
 
-/* MODULE INTERNAL STATE */
+/* ESTADO INTERNO DEL MÓDULO */
 
 const char _indentationCharacter = ' ';
 const char _indentationSize = 4;
 static Logger * _logger = NULL;
 
-/** Shutdown module's internal state. */
+/** Cierra el estado interno del módulo. */
 void _shutdownGeneratorModule() {
 	if (_logger != NULL) {
-		// logDebugging(_logger, "Destroying module: Generator...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
@@ -25,7 +24,7 @@ ModuleDestructor initializeGeneratorModule() {
 	return _shutdownGeneratorModule;
 }
 
-/** PRIVATE FUNCTIONS */
+/** FUNCIONES PRIVADAS */
 
 static char * _indentation(const unsigned int indentationLevel);
 static const char _expressionTypeToCharacter(const ExpressionType type);
@@ -42,8 +41,8 @@ static void _generateHTMLPrologue(void);
 static void _generateHTMLEpilogue(void);
 
 /**
- * Converts and expression type to the proper character of the operation
- * involved, or returns '\0' if that's not possible.
+ * Convierte un tipo de expresión al carácter de la operación correspondiente,
+ * o retorna '\0' si no es posible.
  */
 static const char _expressionTypeToCharacter(const ExpressionType type) {
 	switch (type) {
@@ -52,13 +51,12 @@ static const char _expressionTypeToCharacter(const ExpressionType type) {
 		case MULTIPLICATION: return '*';
 		case SUBTRACTION: return '-';
 		default:
-			// logError(_logger, "The specified expression type cannot be converted into character: %d", type);
 			return '\0';
 	}
 }
 
 /**
- * Generates the output of a constant.
+ * Genera la salida de una constante.
  */
 static void _generateConstant(const unsigned int indentationLevel, Constant * constant) {
 	_output(indentationLevel, "%s", "[ $C$, circle, draw, black!20\n");
@@ -67,8 +65,8 @@ static void _generateConstant(const unsigned int indentationLevel, Constant * co
 }
 
 /**
- * Creates the epilogue of the generated output, that is, the final lines that
- * completes a valid Latex document.
+ * Crea el epílogo de la salida generada, es decir, las líneas finales que
+ * completan un documento LaTeX válido.
  */
 static void _generateEpilogue(const int value) {
 	_output(0, "%s%d%s",
@@ -80,7 +78,7 @@ static void _generateEpilogue(const int value) {
 }
 
 /**
- * Generates the output of an expression.
+ * Genera la salida de una expresión.
  */
 static void _generateExpression(const unsigned int indentationLevel, Expression * expression) {
 	_output(indentationLevel, "%s", "[ $E$, circle, draw, black!20\n");
@@ -104,7 +102,7 @@ static void _generateExpression(const unsigned int indentationLevel, Expression 
 }
 
 /**
- * Generates the output of a factor.
+ * Genera la salida de un factor.
  */
 static void _generateFactor(const unsigned int indentationLevel, Factor * factor) {
 	_output(indentationLevel, "%s", "[ $F$, circle, draw, black!20\n");
@@ -125,17 +123,15 @@ static void _generateFactor(const unsigned int indentationLevel, Factor * factor
 }
 
 /**
- * Generates the output of the program.
+ * Genera la salida del programa.
  */
 static void _generateProgram(Program * program) {
 	_generateExpression(3, program->expression);
 }
 
 /**
- * Creates the prologue of the generated output, a Latex document that renders
- * a tree thanks to the Forest package.
- *
- * @see https://ctan.dcc.uchile.cl/graphics/pgf/contrib/forest/forest-doc.pdf
+ * Crea el prólogo de la salida generada, un documento LaTeX que renderiza
+ * un árbol gracias al paquete Forest.
  */
 static void _generatePrologue(void) {
 	_output(0, "%s",
@@ -153,16 +149,14 @@ static void _generatePrologue(void) {
 }
 
 /**
- * Generates an indentation string for the specified level.
+ * Genera una cadena de indentación para el nivel especificado.
  */
 static char * _indentation(const unsigned int level) {
 	return indentation(_indentationCharacter, level, _indentationSize);
 }
 
 /**
- * Outputs a formatted string to standard output. The "fflush" instruction
- * allows to see the output even close to a failure, because it drops the
- * buffering.
+ * Escribe una cadena formateada a la salida estándar.
  */
 static void _output(const unsigned int indentationLevel, const char * const format, ...) {
 	va_list arguments;
@@ -176,7 +170,7 @@ static void _output(const unsigned int indentationLevel, const char * const form
 	va_end(arguments);
 }
 
-/** NEW FUNCTIONS FOR CHART GENERATION */
+/** NUEVAS FUNCIONES PARA GENERACIÓN DE GRÁFICOS */
 
 /**
  * Genera el código JavaScript para un chart usando Chart.js
@@ -191,7 +185,6 @@ static void _generateChartJS(Chart * chart, ChartData * chartData, const char * 
 	_output(3, "type: '%s',\n", _chartTypeToString(chart->type));
 	_output(3, "data: {\n");
 	
-	// Generar labels
 	_output(4, "labels: [");
 	for (size_t i = 0; i < chartData->dataCount; i++) {
 		if (i > 0) _output(0, ", ");
@@ -199,25 +192,21 @@ static void _generateChartJS(Chart * chart, ChartData * chartData, const char * 
 	}
 	_output(0, "],\n");
 	
-	// Generar datasets
 	_output(4, "datasets: [{\n");
 	_output(5, "label: '%s',\n", chartData->yLabel != NULL ? chartData->yLabel : "Data");
 	_output(5, "data: [");
 	for (size_t i = 0; i < chartData->dataCount; i++) {
 		if (i > 0) _output(0, ", ");
-		// Usar más decimales para valores pequeños (como BMI)
 		_output(0, "%.6f", chartData->values[i]);
 	}
 	_output(0, "],\n");
 	
-	// Colores
 	if (chart->colors != NULL && chart->colorCount > 0) {
 		_output(5, "backgroundColor: [");
 		for (size_t i = 0; i < chart->colorCount && i < chartData->dataCount; i++) {
 			if (i > 0) _output(0, ", ");
 			_output(0, "'%s'", chart->colors[i] != NULL ? chart->colors[i] : "#3498db");
 		}
-		// Si hay más datos que colores, repetir el último color o usar colores por defecto
 		if (chartData->dataCount > chart->colorCount) {
 			const char * lastColor = chart->colors[chart->colorCount - 1] != NULL ? chart->colors[chart->colorCount - 1] : "#3498db";
 			for (size_t i = chart->colorCount; i < chartData->dataCount; i++) {
@@ -228,10 +217,7 @@ static void _generateChartJS(Chart * chart, ChartData * chartData, const char * 
 	} else if (chart->singleColor != NULL) {
 		_output(5, "backgroundColor: '%s',\n", chart->singleColor);
 	} else {
-		// Para pie/donut charts, generar colores por defecto si no se especifican
-		// Chart.js tiene una paleta por defecto, pero es mejor especificarla explícitamente
 		if (chart->type == CHART_PIE || chart->type == CHART_DONUT) {
-			// Paleta de colores por defecto para pie charts
 			const char * defaultColors[] = {
 				"#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF",
 				"#FF9F40", "#FF6384", "#C9CBCF", "#4BC0C0", "#FF6384"
@@ -249,7 +235,6 @@ static void _generateChartJS(Chart * chart, ChartData * chartData, const char * 
 	_output(4, "}]\n");
 	_output(3, "},\n");
 	
-	// Agregar plugin ChartDataLabels para pie y donut charts
 	if (chart->type == CHART_PIE || chart->type == CHART_DONUT) {
 		_output(3, "plugins: [ChartDataLabels],\n");
 	}
@@ -269,7 +254,6 @@ static void _generateChartJS(Chart * chart, ChartData * chartData, const char * 
 		_output(5, "}\n");
 	}
 	
-	// Agregar configuración de datalabels para pie y donut charts
 	if (chart->type == CHART_PIE || chart->type == CHART_DONUT) {
 		_output(5, ",\n");
 		_output(5, "datalabels: {\n");
@@ -287,7 +271,6 @@ static void _generateChartJS(Chart * chart, ChartData * chartData, const char * 
 		_output(5, "}\n");
 	}
 	
-	// Verificar si hay opciones adicionales después de plugins
 	bool hasAdditionalOptions = (chart->type == CHART_BAR && chart->orientation != NULL) ||
 	                            (chart->type == CHART_DONUT && chart->hole > 0.0) ||
 	                            (chart->type == CHART_SCATTER && chart->xRange != NULL);
@@ -298,7 +281,6 @@ static void _generateChartJS(Chart * chart, ChartData * chartData, const char * 
 		_output(4, "}\n");
 	}
 	
-	// Opciones específicas por tipo
 	if (chart->type == CHART_BAR && chart->orientation != NULL) {
 		_output(4, "indexAxis: '%s',\n", strcmp(chart->orientation, "horizontal") == 0 ? "y" : "x");
 	}
@@ -329,7 +311,7 @@ static void _generateChartJS(Chart * chart, ChartData * chartData, const char * 
 }
 
 /**
- * Convierte ChartType a string para Chart.js
+ * Convierte ChartType a cadena para Chart.js.
  */
 static const char * _chartTypeToString(ChartType type) {
 	switch (type) {
@@ -343,7 +325,7 @@ static const char * _chartTypeToString(ChartType type) {
 }
 
 /**
- * Genera el HTML completo con Chart.js
+ * Genera el HTML completo con Chart.js.
  */
 static void _generateHTMLPrologue(void) {
 	_output(0, "<!DOCTYPE html>\n");
@@ -367,29 +349,24 @@ static void _generateHTMLEpilogue(void) {
 	_output(0, "</html>\n");
 }
 
-/** PUBLIC FUNCTIONS */
+/** FUNCIONES PÚBLICAS */
 
 void executeGenerator(CompilerState * compilerState) {
-	// logDebugging(_logger, "Generating final output...");
-	
 	Program * program = compilerState->abstractSyntaxtTree;
 	if (program == NULL) {
 		logError(_logger, "Program is NULL");
 		return;
 	}
 	
-	// Si es un programa de gráficos (statements)
 	if (program->statements != NULL) {
 		_generateHTMLPrologue();
 		
-		// Primero, procesar todas las sources para tener los datos disponibles
 		Statement * current = program->statements;
 		CSVData ** csvDataMap = NULL;
 		const char ** sourceIdentifiers = NULL;
 		size_t sourceCount = 0;
 		size_t sourceCapacity = 0;
 		
-		// Contar sources primero (todas las que tienen identifier)
 		while (current != NULL) {
 			if (current->type == STMT_SOURCE && current->source != NULL && current->source->identifier != NULL) {
 				sourceCount++;
@@ -405,24 +382,21 @@ void executeGenerator(CompilerState * compilerState) {
 				return;
 			}
 			
-			// Inicializar todos los slots
 			for (size_t i = 0; i < sourceCount; i++) {
 				csvDataMap[i] = NULL;
 				sourceIdentifiers[i] = NULL;
 			}
 			
-			// Primera pasada: procesar sources que tienen csvFile (sources base)
 			current = program->statements;
 			while (current != NULL) {
 				if (current->type == STMT_SOURCE && current->source != NULL) {
 					Source * source = current->source;
 					if (source->identifier != NULL && source->csvFile != NULL) {
-						// Buscar el slot para este identifier
-						size_t targetIndex = sourceCount; // Invalid index
+						size_t targetIndex = sourceCount;
 						for (size_t i = 0; i < sourceCount; i++) {
 							if (sourceIdentifiers[i] == NULL) {
 								targetIndex = i;
-								sourceIdentifiers[i] = source->identifier; // Reservar el slot
+								sourceIdentifiers[i] = source->identifier;
 								break;
 							}
 						}
@@ -433,16 +407,13 @@ void executeGenerator(CompilerState * compilerState) {
 							continue;
 						}
 						
-						// Buscar CSV en diferentes paths (misma lógica que ChartProcessor)
 						char * csvPath = NULL;
 						
-						// Primero intentar el path directo
 						FILE * testFile = fopen(source->csvFile, "r");
 						if (testFile != NULL) {
 							fclose(testFile);
 							csvPath = (char*)source->csvFile;
 						} else {
-							// Intentar en src/test/c/data/
 							char * dataPath = calloc(strlen(source->csvFile) + 50, sizeof(char));
 							if (dataPath != NULL) {
 								sprintf(dataPath, "src/test/c/data/%s", source->csvFile);
@@ -456,7 +427,6 @@ void executeGenerator(CompilerState * compilerState) {
 								}
 							}
 							
-							// Si aún no funciona, intentar path absoluto desde el directorio actual
 							if (csvPath == NULL) {
 								dataPath = calloc(strlen(source->csvFile) + 20, sizeof(char));
 								if (dataPath != NULL) {
@@ -476,42 +446,30 @@ void executeGenerator(CompilerState * compilerState) {
 						if (csvPath == NULL) {
 							logError(_logger, "Cannot find CSV file for source '%s': %s (tried: %s, src/test/c/data/%s, ./%s)", 
 								source->identifier, source->csvFile, source->csvFile, source->csvFile, source->csvFile);
-							// Liberar el slot reservado
 							sourceIdentifiers[targetIndex] = NULL;
-							// Continuar con la siguiente source en lugar de fallar completamente
 						} else if (csvPath != NULL) {
 							CSVData * csvData = readCSVFile(csvPath);
 							if (csvData != NULL) {
-								// Procesar la source (aplicar filtros y proyecciones)
 								ProcessedData * processed = processSourceData(csvData, source);
 								if (processed != NULL) {
-									// Convertir ProcessedData a CSVData para compatibilidad
-									// Los datos procesados tienen la misma estructura que CSVData
 									CSVData * processedCSV = calloc(1, sizeof(CSVData));
 									if (processedCSV != NULL) {
 										processedCSV->headers = processed->columnNames;
 										processedCSV->headerCount = processed->columnCount;
 										processedCSV->rows = processed->rows;
 										processedCSV->rowCount = processed->rowCount;
-										// No liberar processed, sus datos ahora pertenecen a processedCSV
-										// Solo liberar la estructura ProcessedData, no los datos
 										free(processed);
 										
 										csvDataMap[targetIndex] = processedCSV;
-										// logDebugging(_logger, "Stored source '%s' in map at index %zu", source->identifier, targetIndex);
 									} else {
 										destroyProcessedData(processed);
-										// Liberar el slot reservado
 										sourceIdentifiers[targetIndex] = NULL;
 									}
 								} else {
-									// El procesamiento falló, liberar el slot reservado
 									sourceIdentifiers[targetIndex] = NULL;
 								}
-								// Liberar CSV original después de procesar
 								destroyCSVData(csvData);
 							} else {
-								// No se pudo leer el CSV, liberar el slot reservado
 								sourceIdentifiers[targetIndex] = NULL;
 							}
 							
@@ -524,22 +482,18 @@ void executeGenerator(CompilerState * compilerState) {
 				current = current->next;
 			}
 			
-			// Segunda pasada: procesar sources que tienen sourceIdentifier (composición)
-			// Estas sources dependen de otras sources ya procesadas
 			current = program->statements;
 			while (current != NULL) {
 				if (current->type == STMT_SOURCE && current->source != NULL) {
 					Source * source = current->source;
-					// Procesar sources que tienen sourceIdentifier pero no csvFile (composición)
 					if (source->identifier != NULL && source->sourceIdentifier != NULL && source->csvFile == NULL) {
-						// Buscar la source base en el mapa
 						CSVData * baseData = NULL;
 						for (size_t i = 0; i < sourceCount; i++) {
 							if (sourceIdentifiers[i] != NULL && strcmp(sourceIdentifiers[i], source->sourceIdentifier) == 0) {
 								baseData = csvDataMap[i];
 								if (baseData == NULL) {
-									logError(_logger, "Found identifier '%s' at index %zu but csvDataMap[%zu] is NULL", 
-										source->sourceIdentifier, i, i);
+								logError(_logger, "Found identifier '%s' at index %zu but csvDataMap[%zu] is NULL", 
+									source->sourceIdentifier, i, i);
 								}
 								break;
 							}
@@ -548,20 +502,9 @@ void executeGenerator(CompilerState * compilerState) {
 						if (baseData == NULL) {
 							logError(_logger, "Base source '%s' not found for composed source '%s' (searched in %zu sources)", 
 								source->sourceIdentifier, source->identifier, sourceCount);
-							// Debug: mostrar qué sources están en el mapa
-							for (size_t i = 0; i < sourceCount; i++) {
-								if (sourceIdentifiers[i] != NULL) {
-									// logDebugging(_logger, "  Map[%zu]: identifier='%s', data=%p", i, sourceIdentifiers[i], (void*)csvDataMap[i]);
-								} else {
-									// logDebugging(_logger, "  Map[%zu]: NULL", i);
-								}
-							}
-							// Continuar con la siguiente source
 						} else {
-							// Procesar la source compuesta (aplicar filtros y proyecciones sobre los datos base)
 							ProcessedData * processed = processSourceData(baseData, source);
 							if (processed != NULL) {
-								// Convertir ProcessedData a CSVData
 								CSVData * processedCSV = calloc(1, sizeof(CSVData));
 								if (processedCSV != NULL) {
 									processedCSV->headers = processed->columnNames;
@@ -570,12 +513,9 @@ void executeGenerator(CompilerState * compilerState) {
 									processedCSV->rowCount = processed->rowCount;
 									free(processed);
 									
-									// Buscar el slot correspondiente a este identifier
-									// Primero buscar si ya existe (no debería)
 									bool stored = false;
 									for (size_t i = 0; i < sourceCount; i++) {
 										if (sourceIdentifiers[i] != NULL && strcmp(sourceIdentifiers[i], source->identifier) == 0) {
-											// Ya existe, reemplazar (no debería pasar)
 											logError(_logger, "Source identifier '%s' already exists in map, replacing", source->identifier);
 											if (csvDataMap[i] != NULL) {
 												destroyCSVData(csvDataMap[i]);
@@ -586,15 +526,11 @@ void executeGenerator(CompilerState * compilerState) {
 										}
 									}
 									
-									// Si no existe, buscar un slot libre
 									if (!stored) {
 										for (size_t i = 0; i < sourceCount; i++) {
 											if (sourceIdentifiers[i] == NULL) {
-												// Slot libre, guardar aquí
 												csvDataMap[i] = processedCSV;
 												sourceIdentifiers[i] = source->identifier;
-												// logDebugging(_logger, "Stored composed source '%s' (from '%s') in map at index %zu", 
-												//	source->identifier, source->sourceIdentifier, i);
 												stored = true;
 												break;
 											}
@@ -612,12 +548,11 @@ void executeGenerator(CompilerState * compilerState) {
 						}
 					}
 				}
-				current = current->next;
-			}
+			current = current->next;
 		}
-		
-		// Procesar charts
-		current = program->statements;
+	}
+	
+	current = program->statements;
 		while (current != NULL) {
 			if (current->type == STMT_CHART && current->chart != NULL) {
 				Chart * chart = current->chart;
@@ -638,7 +573,6 @@ void executeGenerator(CompilerState * compilerState) {
 			current = current->next;
 		}
 		
-		// Liberar datos CSV
 		if (csvDataMap != NULL) {
 			for (size_t i = 0; i < sourceCount; i++) {
 				if (csvDataMap[i] != NULL) {
@@ -651,12 +585,9 @@ void executeGenerator(CompilerState * compilerState) {
 		
 		_generateHTMLEpilogue();
 	}
-	// Si es un programa de calculadora (expression), mantener el comportamiento original
 	else if (program->expression != NULL) {
 		_generatePrologue();
 		_generateProgram(program);
 		_generateEpilogue(compilerState->value);
 	}
-	
-	// logDebugging(_logger, "Generation is done.");
 }

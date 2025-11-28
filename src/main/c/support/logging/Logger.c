@@ -1,6 +1,6 @@
 #include "Logger.h"
 
-/* PRIVATE FUNCTIONS */
+/* FUNCIONES PRIVADAS */
 
 static void _log(const Logger * logger, const LoggingLevel loggingLevel, const char * const format, va_list arguments);
 static LoggingLevel _loggingLevelFromString(const char * loggingLevel);
@@ -8,7 +8,7 @@ static void _logInStream(FILE * const stream, const char * const format, va_list
 static const char * _toContextString(const LoggingLevel loggingLevel);
 
 /**
- * Logs a new message at the specified level, using a format string.
+ * Registra un nuevo mensaje en el nivel especificado, usando una cadena de formato.
  */
 static void _log(const Logger * logger, const LoggingLevel loggingLevel, const char * const format, va_list arguments) {
 	if (logger->loggingLevel <= loggingLevel) {
@@ -25,8 +25,8 @@ static void _log(const Logger * logger, const LoggingLevel loggingLevel, const c
 }
 
 /**
- * Gets the logging level from the specified string. Returns CRITICAL if the
- * provided value is unknown.
+ * Obtiene el nivel de logging desde la cadena especificada.
+ * Retorna CRITICAL si el valor proporcionado es desconocido.
  */
 static LoggingLevel _loggingLevelFromString(const char * loggingLevel) {
 	if (strcmp(loggingLevel, "ALL") == 0) return ALL;
@@ -38,16 +38,14 @@ static LoggingLevel _loggingLevelFromString(const char * loggingLevel) {
 }
 
 /**
- * Low-level logging function.
- *
- * @see https://cplusplus.com/reference/cstdio/vfprintf/
+ * Función de logging de bajo nivel.
  */
 static void _logInStream(FILE * const stream, const char * const format, va_list arguments) {
 	vfprintf(stream, format, arguments);
 }
 
 /**
- * Get the context string of the specified logging level.
+ * Obtiene la cadena de contexto del nivel de logging especificado.
  */
 static const char * _toContextString(const LoggingLevel loggingLevel) {
 	switch (loggingLevel) {
@@ -66,7 +64,7 @@ static const char * _toContextString(const LoggingLevel loggingLevel) {
 	}
 }
 
-/* PUBLIC FUNCTIONS */
+/* FUNCIONES PÚBLICAS */
 
 Logger * createLogger(char * name) {
 	Logger * logger = calloc(1, sizeof(Logger));

@@ -2,14 +2,13 @@
 #include <string.h>
 #include <math.h>
 
-/* MODULE INTERNAL STATE */
+/* ESTADO INTERNO DEL MÓDULO */
 
 static Logger * _logger = NULL;
 
-/** Shutdown module's internal state. */
+/** Cierra el estado interno del módulo. */
 void _shutdownDataProcessorModule() {
 	if (_logger != NULL) {
-		// logDebugging(_logger, "Destroying module: DataProcessor...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
@@ -20,7 +19,7 @@ ModuleDestructor initializeDataProcessorModule() {
 	return _shutdownDataProcessorModule;
 }
 
-/** PRIVATE FUNCTIONS */
+/** FUNCIONES PRIVADAS */
 
 /**
  * Evalúa una condición de filtro sobre una fila
@@ -75,7 +74,7 @@ static bool _evaluateFilterCondition(CSVRow * row, CSVData * csvData, FilterCond
  */
 static bool _evaluateFilters(CSVRow * row, CSVData * csvData, FilterCondition * filters) {
 	if (filters == NULL) {
-		return true; // Sin filtros, todas las filas pasan
+		return true;
 	}
 	
 	FilterCondition * current = filters;
@@ -161,20 +160,18 @@ static void _destroyProcessedRow(CSVRow * row) {
 	}
 }
 
-/** PUBLIC FUNCTIONS */
+/** FUNCIONES PÚBLICAS */
 
 CSVData * applyFilters(CSVData * csvData, FilterCondition * filters) {
 	if (csvData == NULL || filters == NULL) {
-		return csvData; // Sin filtros, retornar datos originales
+		return csvData;
 	}
 	
-	// Crear nueva estructura de datos filtrados
 	CSVData * filtered = calloc(1, sizeof(CSVData));
 	if (filtered == NULL) {
 		return NULL;
 	}
 	
-	// Copiar headers
 	filtered->headerCount = csvData->headerCount;
 	filtered->headers = calloc(csvData->headerCount + 1, sizeof(char*));
 	if (filtered->headers == NULL) {
@@ -197,7 +194,6 @@ CSVData * applyFilters(CSVData * csvData, FilterCondition * filters) {
 	}
 	filtered->headers[csvData->headerCount] = NULL;
 	
-	// Filtrar filas
 	CSVRow * lastRow = NULL;
 	CSVRow * current = csvData->rows;
 	
@@ -230,7 +226,6 @@ ProcessedData * applyProjection(CSVData * csvData, Projection * projection) {
 		return NULL;
 	}
 	
-	// Si no hay proyección, copiar todas las columnas
 	if (projection == NULL || projection->columns == NULL || projection->columnCount == 0) {
 		processed->columnCount = csvData->headerCount;
 		processed->columnNames = calloc(csvData->headerCount + 1, sizeof(char*));
@@ -245,7 +240,6 @@ ProcessedData * applyProjection(CSVData * csvData, Projection * projection) {
 		}
 		processed->columnNames[csvData->headerCount] = NULL;
 		
-		// Copiar todas las filas
 		CSVRow * lastRow = NULL;
 		CSVRow * current = csvData->rows;
 		while (current != NULL) {
@@ -264,7 +258,6 @@ ProcessedData * applyProjection(CSVData * csvData, Projection * projection) {
 		return processed;
 	}
 	
-	// Aplicar proyección: solo columnas especificadas
 	processed->columnCount = projection->columnCount;
 	processed->columnNames = calloc(projection->columnCount + 1, sizeof(char*));
 	if (processed->columnNames == NULL) {
@@ -272,7 +265,6 @@ ProcessedData * applyProjection(CSVData * csvData, Projection * projection) {
 		return NULL;
 	}
 	
-	// Obtener índices de columnas
 	size_t * columnIndices = calloc(projection->columnCount, sizeof(size_t));
 	if (columnIndices == NULL) {
 		free(processed->columnNames);
@@ -286,7 +278,6 @@ ProcessedData * applyProjection(CSVData * csvData, Projection * projection) {
 			columnIndices[i] = (size_t)getColumnIndex(csvData, projection->columns[i]);
 			if (columnIndices[i] == (size_t)-1) {
 				logError(_logger, "Column not found in projection: %s", projection->columns[i]);
-				// Liberar recursos
 				for (size_t j = 0; j < i; j++) {
 					free(processed->columnNames[j]);
 				}
@@ -299,7 +290,6 @@ ProcessedData * applyProjection(CSVData * csvData, Projection * projection) {
 	}
 	processed->columnNames[projection->columnCount] = NULL;
 	
-	// Copiar filas con solo las columnas proyectadas
 	CSVRow * lastRow = NULL;
 	CSVRow * current = csvData->rows;
 	while (current != NULL) {
@@ -351,10 +341,8 @@ double evaluateExpression(Expression * expression, CSVRow * row, CSVData * csvDa
 					Constant * c = expression->factor->constant;
 					if (c != NULL) {
 						if (c->string != NULL) {
-							// Es un identificador de columna
 							int colIndex = getColumnIndex(csvData, c->string);
 							if (colIndex < 0) {
-								// Column not found - log for debugging
 								logError(_logger, "Column '%s' not found in CSV. Available columns:", c->string);
 								if (csvData != NULL && csvData->headers != NULL) {
 									for (size_t i = 0; i < csvData->headerCount; i++) {
@@ -383,8 +371,6 @@ double evaluateExpression(Expression * expression, CSVRow * row, CSVData * csvDa
 					return 0.0;
 				}
 				case AGGREGATE_FACTOR: {
-					// Las agregaciones se procesan a nivel de dataset completo
-					// Aquí retornamos 0, se manejan en applyAggregation
 					return 0.0;
 				}
 				case EXPRESSION: {
@@ -457,7 +443,6 @@ ProcessedData * processSourceData(CSVData * csvData, Source * source) {
 		return NULL;
 	}
 	
-	// Aplicar filtros
 	CSVData * filtered = applyFilters(csvData, source->filters);
 	if (filtered == NULL && source->filters != NULL) {
 		return NULL;
@@ -465,10 +450,8 @@ ProcessedData * processSourceData(CSVData * csvData, Source * source) {
 	
 	CSVData * dataToProject = (filtered != NULL) ? filtered : csvData;
 	
-	// Aplicar proyección
 	ProcessedData * processed = applyProjection(dataToProject, source->projection);
 	
-	// Liberar datos filtrados si fueron creados
 	if (filtered != NULL && filtered != csvData) {
 		destroyCSVData(filtered);
 	}

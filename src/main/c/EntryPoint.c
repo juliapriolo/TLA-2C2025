@@ -14,15 +14,12 @@
 #include <stdio.h>
 
 /**
- * The main entry-point of the entire application. If you use "strtok" to
- * parse anything inside this project instead of using Flex and Bison, I will
- * find you, and I will kill you (Bryan Mills; "Taken", 2008).
+ * Punto de entrada principal de la aplicación.
  */
 const int main(const int length, const char ** arguments) {
 	LexicalAnalyzer * lexicalAnalyzer = createLexicalAnalyzer();
 	Logger * logger = createLogger("EntryPoint");
 	for (int k = 0; k < length; ++k) {
-//		logDebugging(logger, "Argument %d: \"%s\"", k, arguments[k]);
 	}
 	CompilerState compilerState = {
 		.abstractSyntaxtTree = NULL,
@@ -43,7 +40,6 @@ const int main(const int length, const char ** arguments) {
 	Program * program = compilerState.abstractSyntaxtTree;
 
 	if (compilationStatus == SUCCEEDED && program != NULL) {
-		/* Validaciones semánticas adicionales (duplicados, etc.) */
 		const bool semanticValidationOk = ValidateProgramSemantics(program);
 		const size_t semanticErrorCount = bisonSemanticErrorCount();
 		const char * const * semanticErrors = bisonSemanticErrors();
@@ -63,16 +59,10 @@ const int main(const int length, const char ** arguments) {
 	}
 	
 	if (compilationStatus == SUCCEEDED) {
-		// ----------------------------------------------------------------------------------------
-		// Beginning of the Backend... ------------------------------------------------------------
 		if (program != NULL && program->statements != NULL) {
-			// Programa DSL de gráficos: generar HTML/JavaScript
-//			logDebugging(logger, "DSL program detected (charts/sources). Generating HTML/JavaScript...");
 			executeGenerator(&compilerState);
 		}
 		else if (program != NULL && program->expression != NULL) {
-			// Programa de calculadora: mantener comportamiento original
-//			logDebugging(logger, "Computing expression value...");
 			ComputationResult computationResult = executeCalculator(&compilerState);
 			if (computationResult.succeeded) {
 				compilerState.value = computationResult.value;
@@ -83,22 +73,15 @@ const int main(const int length, const char ** arguments) {
 				compilationStatus = FAILED;
 			}
 		}
-		else {
-//			logDebugging(logger, "Empty program - nothing to execute.");
-		}
-		// ...end of the Backend. -----------------------------------------------------------------
-		// ----------------------------------------------------------------------------------------
 	}
 	else {
 		logError(logger, "The syntactic-analysis phase rejects the input program.");
 		compilationStatus = FAILED;
 	}
-//	logDebugging(logger, "Releasing AST resources...");
 	destroyProgram(program);
 	for (int k = (sizeof(moduleDestructors)/sizeof(ModuleDestructor)) - 1; 0 <= k; --k) {
 		moduleDestructors[k]();
 	}
-//	logDebugging(logger, "Compilation is done.");
 	destroyLogger(logger);
 	destroyLexicalAnalyzer(lexicalAnalyzer);
 	return compilationStatus;

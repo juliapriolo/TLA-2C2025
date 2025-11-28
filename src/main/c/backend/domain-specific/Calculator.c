@@ -1,13 +1,12 @@
 #include "Calculator.h"
 
-/* MODULE INTERNAL STATE */
+/* ESTADO INTERNO DEL MÓDULO */
 
 static Logger * _logger = NULL;
 
-/** Shutdown module's internal state. */
+/** Cierra el estado interno del módulo. */
 void _shutdownCalculatorModule() {
 	if (_logger != NULL) {
-		// logDebugging(_logger, "Destroying module: Calculator...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
@@ -18,16 +17,16 @@ ModuleDestructor initializeCalculatorModule() {
 	return _shutdownCalculatorModule;
 }
 
-/** PRIVATE FUNCTIONS */
+/** FUNCIONES PRIVADAS */
 
 static BinaryOperator _expressionTypeToBinaryOperator(const ExpressionType type);
 static ComputationResult _invalidBinaryOperator(const int x, const int y);
 static ComputationResult _invalidComputation();
 
 /**
- * Converts and expression type to the proper binary operator. If that's not
- * possible, returns a binary operator that always returns an invalid
- * computation result.
+ * Convierte un tipo de expresión al operador binario correspondiente.
+ * Si no es posible, retorna un operador binario que siempre retorna
+ * un resultado de cómputo inválido.
  */
 static BinaryOperator _expressionTypeToBinaryOperator(const ExpressionType type) {
 	switch (type) {
@@ -42,14 +41,14 @@ static BinaryOperator _expressionTypeToBinaryOperator(const ExpressionType type)
 }
 
 /**
- * A binary operator that always returns an invalid computation result.
+ * Un operador binario que siempre retorna un resultado de cómputo inválido.
  */
 static ComputationResult _invalidBinaryOperator(const int x, const int y) {
 	return _invalidComputation();
 }
 
 /**
- * A computation that always returns an invalid result.
+ * Un cómputo que siempre retorna un resultado inválido.
  */
 static ComputationResult _invalidComputation() {
 	ComputationResult computationResult = {
@@ -59,7 +58,7 @@ static ComputationResult _invalidComputation() {
 	return computationResult;
 }
 
-/** PUBLIC FUNCTIONS */
+/** FUNCIONES PÚBLICAS */
 
 ComputationResult add(const int leftAddend, const int rightAddend) {
 	ComputationResult computationResult = {

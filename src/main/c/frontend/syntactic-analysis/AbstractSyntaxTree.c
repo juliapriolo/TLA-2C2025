@@ -2,14 +2,13 @@
 #include <stdio.h>
 #include <string.h>
 
-/* MODULE INTERNAL STATE */
+/* ESTADO INTERNO DEL MÓDULO */
 
 static Logger * _logger = NULL;
 
-/** Shutdown module's internal state. */
+/** Cierra el estado interno del módulo. */
 void _shutdownAbstractSyntaxTreeModule() {
 	if (_logger != NULL) {
-		// logDebugging(_logger, "Destroying module: AbstractSyntaxTree...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
@@ -20,7 +19,7 @@ ModuleDestructor initializeAbstractSyntaxTreeModule() {
 	return _shutdownAbstractSyntaxTreeModule;
 }
 
-/* Constructors */
+/* Constructores */
 Constant * createIntegerConstant(int value) {
 	Constant * c = calloc(1, sizeof(Constant));
 	if (!c) return NULL;
@@ -102,10 +101,9 @@ Program * createProgramFromExpression(Expression * expression) {
 	return p;
 }
 
-/* PUBLIC FUNCTIONS */
+/* FUNCIONES PÚBLICAS */
 
 void destroyConstant(Constant * constant) {
-	// logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (constant != NULL) {
 		if (constant->string != NULL) {
 			free(constant->string);
@@ -120,7 +118,6 @@ void destroyConstant(Constant * constant) {
 }
 
 void destroyExpression(Expression * expression) {
-	// logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (expression != NULL) {
 		switch (expression->type) {
 			case ADDITION:
@@ -139,7 +136,6 @@ void destroyExpression(Expression * expression) {
 }
 
 void destroyFactor(Factor * factor) {
-	// logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (factor != NULL) {
 		switch (factor->type) {
 			case CONSTANT:
@@ -158,12 +154,11 @@ void destroyFactor(Factor * factor) {
 	}
 }
 
-// Nuevos constructores para DSL de gráficos
+/* Nuevos constructores para DSL de gráficos */
 
 FilterCondition * createFilterCondition(char * columnName, FilterOperator op, char * stringValue) {
 	FilterCondition * fc = calloc(1, sizeof(FilterCondition));
 	if (!fc) return NULL;
-	/* Tomar ownership directo de los strings del lexer */
 	fc->columnName = columnName;
 	fc->operator = op;
 	fc->valueType = FILTER_VALUE_STRING;
@@ -175,7 +170,6 @@ FilterCondition * createFilterCondition(char * columnName, FilterOperator op, ch
 FilterCondition * createFilterConditionInt(char * columnName, FilterOperator op, int intValue) {
 	FilterCondition * fc = calloc(1, sizeof(FilterCondition));
 	if (!fc) return NULL;
-	/* Tomar ownership directo de los strings del lexer */
 	fc->columnName = columnName;
 	fc->operator = op;
 	fc->valueType = FILTER_VALUE_INT;
@@ -204,7 +198,6 @@ Projection * createProjection(char ** columns, size_t columnCount) {
 	if (!p) {
 		return NULL;
 	}
-	// Los strings ya fueron copiados en project_clause antes de pasar aquí
 	p->columns = columns;
 	p->columnCount = columnCount;
 	return p;
@@ -284,14 +277,13 @@ SourceOptions * createSourceOptions(FilterCondition * filters, Projection * proj
 	return options;
 }
 
-// Destructores
+/* Destructores */
 
 void destroyFilterCondition(FilterCondition * filter) {
 	if (filter != NULL) {
 		if (filter->columnName != NULL) {
 			free(filter->columnName);
 		}
-		// Solo liberar stringValue si es de tipo string (los int no necesitan liberación)
 		if (filter->valueType == FILTER_VALUE_STRING && filter->value.stringValue != NULL) {
 			free(filter->value.stringValue);
 		}
@@ -391,7 +383,6 @@ void destroyStatement(Statement * statement) {
 }
 
 void destroyProgram(Program * program) {
-	// logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (program != NULL) {
 		destroyStatement(program->statements);
 		destroyExpression(program->expression);
@@ -399,7 +390,7 @@ void destroyProgram(Program * program) {
 	}
 }
 
-// Funciones de debugging
+/* Funciones de depuración */
 
 static void _printIndent(int indent) {
 	for (int i = 0; i < indent; ++i) {
@@ -458,7 +449,7 @@ void printSource(Source * source, int indent) {
 
 static void _printExpression(Expression * expr, int indent);
 
-// Función auxiliar para detectar si una expresión es solo un identificador simple
+/* Función auxiliar para detectar si una expresión es solo un identificador simple */
 static char * _extractSimpleIdentifier(Expression * expr) {
 	if (expr == NULL || expr->type != FACTOR) {
 		return NULL;
@@ -466,7 +457,6 @@ static char * _extractSimpleIdentifier(Expression * expr) {
 	if (expr->factor == NULL) {
 		return NULL;
 	}
-	// Si es un identificador simple (CONSTANT con string)
 	if (expr->factor->type == CONSTANT && expr->factor->constant != NULL && expr->factor->constant->string != NULL) {
 		return expr->factor->constant->string;
 	}
@@ -496,13 +486,11 @@ void printChart(Chart * chart, int indent) {
 	_printIndent(indent + 1);
 	printf("xColumn: %s\n", chart->xColumn ? chart->xColumn : "NULL");
 	if (chart->yExpression != NULL) {
-		// Si es solo un identificador simple, mostrarlo como yColumn (igual que xColumn)
 		char * simpleId = _extractSimpleIdentifier(chart->yExpression);
 		if (simpleId != NULL) {
 			_printIndent(indent + 1);
 			printf("yColumn: %s\n", simpleId);
 		} else {
-			// Es una expresión compleja, mostrarla completa
 			_printIndent(indent + 1);
 			printf("yExpression:\n");
 			_printExpression(chart->yExpression, indent + 2);

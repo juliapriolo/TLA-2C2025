@@ -1,14 +1,13 @@
 #include "Frontend.h"
 
-/* MODULE INTERNAL STATE */
+/* ESTADO INTERNO DEL MÓDULO */
 
 static LexicalAnalyzer * _lexicalAnalyzer = NULL;
 static Logger * _logger = NULL;
 
-/** Shutdown module's internal state. */
+/** Cierra el estado interno del módulo. */
 void _shutdownFrontendModule() {
 	if (_logger != NULL) {
-		logDebugging(_logger, "Destroying module: Frontend...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
@@ -21,14 +20,14 @@ ModuleDestructor initializeFrontendModule(LexicalAnalyzer * lexicalAnalyzer) {
 	return _shutdownFrontendModule;
 }
 
-/* IMPORTED FUNCTIONS */
+/* FUNCIONES IMPORTADAS */
 
 extern bool flexHasBuffer(LexicalAnalyzer * lexicalAnalyzer);
 extern FlexContext flexCurrentContext(LexicalAnalyzer * lexicalAnalyzer);
 extern void flexEnterContext(LexicalAnalyzer * lexicalAnalyzer, FlexContext flexContext);
 extern void flexLeaveContext(LexicalAnalyzer * lexicalAnalyzer);
 
-/* PRIVATE FUNCTIONS */
+/* FUNCIONES PRIVADAS */
 
 static const char * _compilationStatusAsString(const CompilationStatus compilationStatus) {
 	switch (compilationStatus) {
@@ -45,7 +44,7 @@ static const char * _compilationStatusAsString(const CompilationStatus compilati
 	}
 }
 
-/* PUBLIC FUNCTIONS */
+/* FUNCIONES PÚBLICAS */
 
 InputBuffer * createInputBuffer(LexicalAnalyzer * lexicalAnalyzer, const char * path) {
 	InputBuffer * inputBuffer = (InputBuffer *) calloc(1, sizeof(InputBuffer));
@@ -73,7 +72,7 @@ Token * createToken(LexicalAnalyzer * lexicalAnalyzer, TokenLabel label) {
 	token->length = yyget_leng(lexicalAnalyzer->scanner);
 	token->lexeme = (char *) calloc(token->length + 1, sizeof(char));
 	token->line = yyget_lineno(lexicalAnalyzer->scanner);
-	token->semanticValue = NULL; // Bison maneja el valor semántico
+	token->semanticValue = NULL;
 	strncpy(token->lexeme, yyget_text(lexicalAnalyzer->scanner), token->length);
 	return token;
 }
@@ -85,14 +84,6 @@ FlexContext currentLexicalAnalyzerContext(LexicalAnalyzer * lexicalAnalyzer) {
 void destroyInputBuffer(InputBuffer * inputBuffer) {
 	if (inputBuffer != NULL) {
 		if (inputBuffer->buffer != NULL) {
-			/**
-			 * @todo
-			 *	Because "yypop_buffer_state" in "popInputBuffer" deletes the
-			 *	buffer, this line produces a double-free error. However,
-			 *	commenting the line produces a memory-leak when a syntax error
-			 *	takes place inside a secondary input buffer.
-			 */
-			// yy_delete_buffer((YY_BUFFER_STATE) inputBuffer->buffer, (yyscan_t) inputBuffer->lexicalAnalyzer->scanner);
 			inputBuffer->buffer = NULL;
 		}
 		if (inputBuffer->file != NULL) {
@@ -133,7 +124,6 @@ void destroyToken(Token * token) {
 			free(token->lexeme);
 			token->lexeme = NULL;
         }
-		// El valor semántico lo libera el parser/AST
 		free(token);
     }
 }
@@ -174,7 +164,6 @@ void pushInputBuffer(InputBuffer * inputBuffer) {
 }
 
 CompilationStatus pushToken(LexicalAnalyzer * lexicalAnalyzer, Token * token) {
-	// El valor semántico debe ser del tipo YYSTYPE (BisonSemanticValue)
 	return (CompilationStatus) yypush_parse(
 		(yypstate *) lexicalAnalyzer->parser,
 		token->label,

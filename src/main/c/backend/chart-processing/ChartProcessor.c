@@ -3,14 +3,13 @@
 #include <math.h>
 #include <stdio.h>
 
-/* MODULE INTERNAL STATE */
+/* ESTADO INTERNO DEL MÓDULO */
 
 static Logger * _logger = NULL;
 
-/** Shutdown module's internal state. */
+/** Cierra el estado interno del módulo. */
 void _shutdownChartProcessorModule() {
 	if (_logger != NULL) {
-		// logDebugging(_logger, "Destroying module: ChartProcessor...");
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
@@ -21,7 +20,7 @@ ModuleDestructor initializeChartProcessorModule() {
 	return _shutdownChartProcessorModule;
 }
 
-/** PRIVATE FUNCTIONS */
+/** FUNCIONES PRIVADAS */
 
 /**
  * Busca datos CSV por identificador de source
@@ -33,9 +32,7 @@ static CSVData * _findCSVData(const char * identifier, CSVData ** csvDataMap, co
 	
 	for (size_t i = 0; i < sourceCount; i++) {
 		if (sourceIdentifiers[i] != NULL) {
-			// logDebugging(_logger, "Comparing '%s' with stored identifier '%s'", identifier, sourceIdentifiers[i]);
 			if (strcmp(sourceIdentifiers[i], identifier) == 0) {
-				// logDebugging(_logger, "Found match at index %zu", i);
 				return csvDataMap[i];
 			}
 		}
@@ -59,7 +56,6 @@ static void _freeSourceDataArray(CSVData ** sourceDataArray, size_t count, Sourc
 				source = source->next;
 				j++;
 			}
-			// Solo liberar si fue leída desde archivo (no si viene del mapa)
 			if (source != NULL && source->csvFile != NULL && source->sourceIdentifier == NULL) {
 				destroyCSVData(sourceDataArray[i]);
 			}
@@ -78,19 +74,15 @@ static bool _shouldFreeCSVData(CSVData * data, Chart * chart, size_t sourceListC
 		return false;
 	}
 	
-	// Si hay múltiples sources, _combineCSVData creó una copia, debe liberarse
 	if (sourceListCount > 1) {
 		return true;
 	}
 	
-	// Si hay una sola source, verificar si viene del mapa
 	if (sourceListCount == 1) {
 		Source * firstSource = chart->sources;
-		// Solo liberar si fue leída desde archivo (no si viene del mapa)
 		if (firstSource != NULL && firstSource->csvFile != NULL && firstSource->sourceIdentifier == NULL) {
 			return true;
 		}
-		// Si viene de sourceIdentifier, no liberar (pertenece al mapa en Generator)
 		return false;
 	}
 	
@@ -106,18 +98,15 @@ static CSVData * _combineCSVData(CSVData ** dataArray, size_t count) {
 		return NULL;
 	}
 	
-	// Si solo hay uno, retornarlo directamente (sin copiar)
 	if (count == 1) {
 		return dataArray[0];
 	}
 	
-	// Verificar que todas tengan las mismas columnas
 	size_t headerCount = dataArray[0]->headerCount;
 	for (size_t i = 1; i < count; i++) {
 		if (dataArray[i] == NULL || dataArray[i]->headerCount != headerCount) {
 			return NULL;
 		}
-		// Verificar que los nombres de columnas coincidan
 		for (size_t j = 0; j < headerCount; j++) {
 			if (dataArray[0]->headers[j] == NULL || dataArray[i]->headers[j] == NULL ||
 			    strcmp(dataArray[0]->headers[j], dataArray[i]->headers[j]) != 0) {
@@ -126,7 +115,6 @@ static CSVData * _combineCSVData(CSVData ** dataArray, size_t count) {
 		}
 	}
 	
-	// Contar total de filas
 	size_t totalRows = 0;
 	for (size_t i = 0; i < count; i++) {
 		CSVRow * current = dataArray[i]->rows;
@@ -136,7 +124,6 @@ static CSVData * _combineCSVData(CSVData ** dataArray, size_t count) {
 		}
 	}
 	
-	// Crear nuevo CSVData
 	CSVData * combined = calloc(1, sizeof(CSVData));
 	if (combined == NULL) {
 		return NULL;
@@ -149,11 +136,9 @@ static CSVData * _combineCSVData(CSVData ** dataArray, size_t count) {
 		return NULL;
 	}
 	
-	// Copiar headers
 	for (size_t i = 0; i < headerCount; i++) {
 		combined->headers[i] = strdup(dataArray[0]->headers[i]);
 		if (combined->headers[i] == NULL) {
-			// Liberar lo que ya se copió
 			for (size_t j = 0; j < i; j++) {
 				free(combined->headers[j]);
 			}
@@ -163,15 +148,12 @@ static CSVData * _combineCSVData(CSVData ** dataArray, size_t count) {
 		}
 	}
 	
-	// Combinar todas las filas
 	CSVRow * lastRow = NULL;
 	for (size_t i = 0; i < count; i++) {
 		CSVRow * current = dataArray[i]->rows;
 		while (current != NULL) {
-			// Crear nueva fila
 			CSVRow * newRow = calloc(1, sizeof(CSVRow));
 			if (newRow == NULL) {
-				// Liberar todo
 				destroyCSVData(combined);
 				return NULL;
 			}
@@ -184,12 +166,10 @@ static CSVData * _combineCSVData(CSVData ** dataArray, size_t count) {
 				return NULL;
 			}
 			
-			// Copiar valores
 			for (size_t j = 0; j < headerCount; j++) {
 				if (current->values != NULL && current->values[j] != NULL) {
 					newRow->values[j] = strdup(current->values[j]);
 					if (newRow->values[j] == NULL) {
-						// Liberar lo que ya se copió
 						for (size_t k = 0; k < j; k++) {
 							free(newRow->values[k]);
 						}
@@ -201,7 +181,6 @@ static CSVData * _combineCSVData(CSVData ** dataArray, size_t count) {
 				}
 			}
 			
-			// Agregar a la lista
 			if (lastRow == NULL) {
 				combined->rows = newRow;
 				lastRow = newRow;
@@ -286,7 +265,6 @@ static char * _extractColumnName(Expression * expression) {
 		if (expression->factor->type == CONSTANT) {
 			Constant * c = expression->factor->constant;
 			if (c != NULL && c->string != NULL) {
-				// Es un identificador de columna
 				return strdup(c->string);
 			}
 		}
@@ -303,7 +281,6 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 		return NULL;
 	}
 	
-	// Contar sources
 	size_t sourceListCount = 0;
 	Source * tempSource = chart->sources;
 	while (tempSource != NULL) {
@@ -311,34 +288,28 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 		tempSource = tempSource->next;
 	}
 	
-	// Array para almacenar datos de cada source
 	CSVData ** sourceDataArray = calloc(sourceListCount, sizeof(CSVData*));
 	if (sourceDataArray == NULL) {
 		logError(_logger, "Memory allocation failed");
 		return NULL;
 	}
 	
-	// Procesar cada source
 	Source * source = chart->sources;
 	size_t sourceIndex = 0;
 	
 	while (source != NULL && sourceIndex < sourceListCount) {
-		// Obtener datos CSV para esta source
 		CSVData * csvData = NULL;
 		CSVData * dataToUse = NULL;
 		
 		if (source->csvFile != NULL) {
-			// Leer desde archivo CSV
-			// Intentar diferentes paths: relativo, en src/test/c/data/, etc.
 			char * csvPath = NULL;
 			
-			// Primero intentar el path directo
+			// Intentar el path directo
 			FILE * testFile = fopen(source->csvFile, "r");
 			if (testFile != NULL) {
 				fclose(testFile);
 				csvPath = source->csvFile;
 			} else {
-				// Intentar en src/test/c/data/
 				char * dataPath = calloc(strlen(source->csvFile) + 50, sizeof(char));
 				if (dataPath != NULL) {
 					sprintf(dataPath, "src/test/c/data/%s", source->csvFile);
@@ -352,7 +323,6 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 					}
 				}
 				
-				// Si aún no funciona, intentar path absoluto desde el directorio actual
 				if (csvPath == NULL) {
 					dataPath = calloc(strlen(source->csvFile) + 20, sizeof(char));
 					if (dataPath != NULL) {
@@ -372,7 +342,6 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 			if (csvPath == NULL) {
 				logError(_logger, "Cannot find CSV file: %s (tried: %s, src/test/c/data/%s, ./%s)", 
 					source->csvFile, source->csvFile, source->csvFile, source->csvFile);
-				// Liberar sources ya procesadas
 				_freeSourceDataArray(sourceDataArray, sourceIndex, chart->sources);
 				return NULL;
 			}
@@ -383,22 +352,18 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 				if (csvPath != source->csvFile && csvPath != NULL) {
 					free(csvPath);
 				}
-				// Liberar sources ya procesadas
 				_freeSourceDataArray(sourceDataArray, sourceIndex, chart->sources);
 				return NULL;
 			}
 			
-			// Liberar path temporal si fue asignado
 			if (csvPath != source->csvFile && csvPath != NULL) {
 				free(csvPath);
 			}
 			
-			// Si la source tiene filtros o proyecciones, procesarla
 			if (source->filters != NULL || source->projection != NULL) {
 				ProcessedData * processed = processSourceData(csvData, source);
 				if (processed == NULL) {
 					destroyCSVData(csvData);
-					// Liberar sources ya procesadas
 					for (size_t i = 0; i < sourceIndex; i++) {
 						if (sourceDataArray[i] != NULL) {
 							destroyCSVData(sourceDataArray[i]);
@@ -408,12 +373,10 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 					return NULL;
 				}
 				
-				// Convertir ProcessedData a CSVData
 				CSVData * processedCSV = calloc(1, sizeof(CSVData));
 				if (processedCSV == NULL) {
 					destroyProcessedData(processed);
 					destroyCSVData(csvData);
-					// Liberar sources ya procesadas
 					for (size_t i = 0; i < sourceIndex; i++) {
 						if (sourceDataArray[i] != NULL) {
 							destroyCSVData(sourceDataArray[i]);
@@ -429,28 +392,21 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 				processedCSV->rowCount = processed->rowCount;
 				free(processed);
 				
-				// Liberar CSV original
 				destroyCSVData(csvData);
 				dataToUse = processedCSV;
 			} else {
-				// Si no hay filtros/proyecciones, usar el CSV directamente
 				dataToUse = csvData;
 			}
 		} else if (source->sourceIdentifier != NULL) {
-			// Obtener de source predefinida (ya procesada en Generator)
-			// logDebugging(_logger, "Looking for source identifier: %s (map has %zu sources)", source->sourceIdentifier, sourceCount);
 			csvData = _findCSVData(source->sourceIdentifier, csvDataMap, sourceIdentifiers, sourceCount);
 			if (csvData == NULL) {
 				logError(_logger, "Source identifier not found: %s (searched in %zu sources)", source->sourceIdentifier, sourceCount);
-				// Liberar sources ya procesadas
 				_freeSourceDataArray(sourceDataArray, sourceIndex, chart->sources);
 				return NULL;
 			}
-			// Los datos ya están procesados en Generator, usar directamente
 			dataToUse = csvData;
 		} else {
 			logError(_logger, "Source has neither CSV file nor source identifier");
-			// Liberar sources ya procesadas
 			for (size_t i = 0; i < sourceIndex; i++) {
 				if (sourceDataArray[i] != NULL) {
 					destroyCSVData(sourceDataArray[i]);
@@ -460,17 +416,14 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 			return NULL;
 		}
 		
-		// Guardar datos de esta source
 		sourceDataArray[sourceIndex] = dataToUse;
 		sourceIndex++;
 		source = source->next;
 	}
 	
-	// Combinar todas las sources
 	CSVData * finalData = _combineCSVData(sourceDataArray, sourceListCount);
 	if (finalData == NULL) {
 		logError(_logger, "Failed to combine sources");
-		// Liberar sources individuales (solo las que fueron leídas desde archivo)
 		for (size_t i = 0; i < sourceListCount; i++) {
 			if (sourceDataArray[i] != NULL) {
 				Source * source = chart->sources;
@@ -479,7 +432,6 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 					source = source->next;
 					j++;
 				}
-				// Solo liberar si fue leída desde archivo (no si viene del mapa)
 				if (source != NULL && source->csvFile != NULL && source->sourceIdentifier == NULL) {
 					destroyCSVData(sourceDataArray[i]);
 				}
@@ -489,12 +441,7 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 		return NULL;
 	}
 	
-	// Liberar array de sources (pero no los datos, ahora están en finalData)
-	// Si _combineCSVData creó una copia, debemos liberar las originales
-	// Si solo hay una source, _combineCSVData retorna el mismo puntero, no liberar
-	// IMPORTANTE: No liberar sources que vienen del mapa (sourceIdentifier)
 	if (sourceListCount > 1) {
-		// Se creó una copia combinada, liberar las originales (solo las leídas desde archivo)
 		for (size_t i = 0; i < sourceListCount; i++) {
 			if (sourceDataArray[i] != NULL) {
 				Source * source = chart->sources;
@@ -503,7 +450,6 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 					source = source->next;
 					j++;
 				}
-				// Solo liberar si fue leída desde archivo (no si viene del mapa)
 				if (source != NULL && source->csvFile != NULL && source->sourceIdentifier == NULL) {
 					destroyCSVData(sourceDataArray[i]);
 				}
@@ -512,7 +458,6 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 	}
 	free(sourceDataArray);
 	
-	// Verificar si hay agregación en la expresión Y
 	bool hasAggregation = _hasAggregation(chart->yExpression);
 	
 	ChartData * chartData = calloc(1, sizeof(ChartData));
@@ -523,10 +468,8 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 		return NULL;
 	}
 	
-	// Obtener índice de columna X
 	int xColumnIndex = -1;
 	if (chart->xColumn != NULL) {
-		// Buscar en columnas
 		for (size_t i = 0; i < finalData->headerCount; i++) {
 			if (finalData->headers[i] != NULL && strcmp(finalData->headers[i], chart->xColumn) == 0) {
 				xColumnIndex = (int)i;
@@ -535,81 +478,71 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 		}
 	}
 	if (hasAggregation) {
-/* --- obtener info de la agregación --- */
-	AggregateFunction aggFunction;
-	char * aggColumn = NULL;
-	if (!_getAggregationInfo(chart->yExpression, &aggFunction, &aggColumn)) {
-		logError(_logger, "Cannot extract aggregation info from expression");
-		if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
-			destroyCSVData(finalData);
+		AggregateFunction aggFunction;
+		char * aggColumn = NULL;
+		if (!_getAggregationInfo(chart->yExpression, &aggFunction, &aggColumn)) {
+			logError(_logger, "Cannot extract aggregation info from expression");
+			if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
+				destroyCSVData(finalData);
+			}
+			free(chartData);
+			return NULL;
 		}
-		free(chartData);
-		return NULL;
-	}
 
-	/* obtener índices relevantes */
-	int xIdx = -1;
-	if (chart->xColumn != NULL) {
-		for (size_t i = 0; i < finalData->headerCount; i++) {
-			if (finalData->headers[i] != NULL && strcmp(finalData->headers[i], chart->xColumn) == 0) {
-				xIdx = (int)i;
-				break;
+		int xIdx = -1;
+		if (chart->xColumn != NULL) {
+			for (size_t i = 0; i < finalData->headerCount; i++) {
+				if (finalData->headers[i] != NULL && strcmp(finalData->headers[i], chart->xColumn) == 0) {
+					xIdx = (int)i;
+					break;
+				}
 			}
 		}
-	}
-	int yIdx = -1;
-	if (aggColumn != NULL) {
-		yIdx = getColumnIndex(finalData, aggColumn);  // -1 si no existe
-	}
-
-	/* --- estructuras dinámicas para agrupar --- */
-	size_t capacity = 8;
-	size_t groupCount = 0;
-	char ** labels = (char **) malloc(sizeof(char*) * (capacity + 1)); // +1 para NULL terminator
-	double * values = (double *) malloc(sizeof(double) * capacity);
-	size_t * counts = (size_t *) malloc(sizeof(size_t) * capacity); // para AVG (y opcionalmente para COUNT)
-	if (labels == NULL || values == NULL || counts == NULL) {
-		logError(_logger, "Out of memory while allocating grouping structures");
-		free(labels); free(values); free(counts);
-		if (_shouldFreeCSVData(finalData, chart, sourceListCount)) destroyCSVData(finalData);
-		free(chartData);
-		return NULL;
-	}
-	/* inicializar */
-	for (size_t i = 0; i < capacity; ++i) {
-		labels[i] = NULL;
-		values[i] = 0.0;
-		counts[i] = 0;
-	}
-	labels[capacity] = NULL;
-
-	/* --- recorrer filas y agrupar --- */
-	CSVRow * cur = finalData->rows;
-	while (cur != NULL) {
-		const char * xVal = (xIdx >= 0) ? getCellValue(cur, (size_t)xIdx) : "";
-		/* si xVal es NULL, usar cadena vacía para agrupar */
-		if (xVal == NULL) xVal = "";
-
-		/* buscar grupo existente */
-		size_t foundPos = (size_t)-1;
-		for (size_t p = 0; p < groupCount; ++p) {
-			if (labels[p] != NULL && strcmp(labels[p], xVal) == 0) {
-				foundPos = p;
-				break;
-			}
+		int yIdx = -1;
+		if (aggColumn != NULL) {
+			yIdx = getColumnIndex(finalData, aggColumn);
 		}
 
-		/* si no existe, crearlo */
-		if (foundPos == (size_t)-1) {
-			/* expandir si es necesario */
-			if (groupCount == capacity) {
+		size_t capacity = 8;
+		size_t groupCount = 0;
+		char ** labels = (char **) malloc(sizeof(char*) * (capacity + 1));
+		double * values = (double *) malloc(sizeof(double) * capacity);
+		size_t * counts = (size_t *) malloc(sizeof(size_t) * capacity);
+		if (labels == NULL || values == NULL || counts == NULL) {
+			logError(_logger, "Out of memory while allocating grouping structures");
+			free(labels); free(values); free(counts);
+			if (_shouldFreeCSVData(finalData, chart, sourceListCount)) destroyCSVData(finalData);
+			free(chartData);
+			return NULL;
+		}
+		for (size_t i = 0; i < capacity; ++i) {
+			labels[i] = NULL;
+			values[i] = 0.0;
+			counts[i] = 0;
+		}
+		labels[capacity] = NULL;
+
+		CSVRow * cur = finalData->rows;
+		while (cur != NULL) {
+			const char * xVal = (xIdx >= 0) ? getCellValue(cur, (size_t)xIdx) : "";
+			if (xVal == NULL) xVal = "";
+
+			size_t foundPos = (size_t)-1;
+			for (size_t p = 0; p < groupCount; ++p) {
+				if (labels[p] != NULL && strcmp(labels[p], xVal) == 0) {
+					foundPos = p;
+					break;
+				}
+			}
+
+			if (foundPos == (size_t)-1) {
+				if (groupCount == capacity) {
 				size_t newCap = capacity * 2;
 				char ** l2 = (char **) realloc(labels, sizeof(char*) * (newCap + 1));
 				double * v2 = (double *) realloc(values, sizeof(double) * newCap);
 				size_t * c2 = (size_t *) realloc(counts, sizeof(size_t) * newCap);
 				if (l2 == NULL || v2 == NULL || c2 == NULL) {
 					logError(_logger, "Out of memory while expanding grouping structures");
-					/* liberar parcial */
 					free(l2); free(v2); free(c2);
 					for (size_t i = 0; i < groupCount; ++i) free(labels[i]);
 					free(labels); free(values); free(counts);
@@ -618,7 +551,6 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 					return NULL;
 				}
 				labels = l2; values = v2; counts = c2;
-				/* inicializar nuevas celdas */
 				for (size_t i = capacity; i < newCap; ++i) {
 					labels[i] = NULL;
 					values[i] = 0.0;
@@ -638,7 +570,6 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 				return NULL;
 			}
 
-			/* inicializar valor según el tipo de agregación */
 			if (aggFunction == AGG_COUNT) {
 				values[groupCount] = 1.0;
 				counts[groupCount] = 1;
@@ -664,10 +595,9 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 					const char * cell = getCellValue(cur, (size_t)yIdx);
 					if (cell) yv = atof(cell);
 				}
-				values[groupCount] = yv; // acumulador (sum)
-				counts[groupCount] = 1;   // contador
+				values[groupCount] = yv;
+				counts[groupCount] = 1;
 			} else {
-				/* guard: si llega otra función desconocida */
 				logError(_logger, "Unsupported aggregation function");
 				for (size_t i = 0; i < groupCount; ++i) free(labels[i]);
 				free(labels); free(values); free(counts);
@@ -679,7 +609,6 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 			foundPos = groupCount;
 			groupCount++;
 		} else {
-			/* actualizar grupo existente */
 			if (aggFunction == AGG_COUNT) {
 				values[foundPos] += 1.0;
 				counts[foundPos] += 1;
@@ -713,15 +642,14 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 					const char * cell = getCellValue(cur, (size_t)yIdx);
 					if (cell) yv = atof(cell);
 				}
-				values[foundPos] += yv;    // acumular suma
-				counts[foundPos] += 1;     // contar
+				values[foundPos] += yv;
+				counts[foundPos] += 1;
 			}
 		}
 
 		cur = cur->next;
 	}
 
-	/* --- si es AVG, convertir sum -> promedio --- */
 	if (aggFunction == AGG_AVERAGE) {
 		for (size_t i = 0; i < groupCount; ++i) {
 			if (counts[i] > 0) {
@@ -730,7 +658,6 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 		}
 	}
 
-	/* --- preparar chartData para devolver --- */
 	chartData->dataCount = groupCount;
 	chartData->labels = calloc(groupCount + 1, sizeof(char*));
 	chartData->values = calloc(groupCount, sizeof(double));
@@ -743,26 +670,22 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 		return NULL;
 	}
 	for (size_t i = 0; i < groupCount; ++i) {
-		chartData->labels[i] = labels[i];   // transfer ownership
+		chartData->labels[i] = labels[i];
 		chartData->values[i] = values[i];
 	}
 	chartData->labels[groupCount] = NULL;
 
-	/* yLabel */
 	if (chart->yAlias != NULL) {
 		chartData->yLabel = strdup(chart->yAlias);
 	} else {
 		chartData->yLabel = aggColumn != NULL ? strdup(aggColumn) : strdup("Value");
 	}
 
-	/* liberar arrays temporales (labels[] transferred) */
 	free(labels); free(values); free(counts);
 	}else {
-		// Modo normal: evaluar expresión Y para cada fila
 		CSVRow * current = finalData->rows;
 		size_t count = 0;
 		
-		// Contar filas
 		while (current != NULL) {
 			count++;
 			current = current->next;
@@ -791,7 +714,6 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 		current = finalData->rows;
 		size_t index = 0;
 		while (current != NULL && index < count) {
-			// Obtener label de X
 			if (xColumnIndex >= 0) {
 				const char * xValue = getCellValue(current, (size_t)xColumnIndex);
 				chartData->labels[index] = xValue != NULL ? strdup(xValue) : strdup("");
@@ -799,7 +721,6 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 				chartData->labels[index] = strdup("");
 			}
 			
-			// Evaluar expresión Y
 			chartData->values[index] = evaluateExpression(chart->yExpression, current, finalData);
 			
 			current = current->next;
@@ -810,7 +731,6 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 		if (chart->yAlias != NULL) {
 			chartData->yLabel = strdup(chart->yAlias);
 		} else {
-			// Intentar extraer el nombre de la columna de la expresión
 			char * columnName = _extractColumnName(chart->yExpression);
 			if (columnName != NULL) {
 				chartData->yLabel = columnName;
@@ -820,9 +740,6 @@ ChartData * processChart(Chart * chart, CSVData ** csvDataMap, const char ** sou
 		}
 	}
 	
-	// Liberar datos combinados
-	// IMPORTANTE: Nunca liberar datos que vienen del mapa (sourceIdentifier)
-	// Solo liberar si fueron leídos desde archivo (csvFile) o si se creó una copia combinada
 	if (_shouldFreeCSVData(finalData, chart, sourceListCount)) {
 		destroyCSVData(finalData);
 	}
