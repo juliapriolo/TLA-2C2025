@@ -140,13 +140,10 @@ CompilationStatus executeLexicalAnalysis(LexicalAnalyzer * lexicalAnalyzer) {
 }
 
 CompilationStatus executeSyntacticAnalysis() {
-	logDebugging(_logger, "Parsing...");
 	CompilationStatus status = IN_PROGRESS;
 	while (status == IN_PROGRESS) {
 		status = executeLexicalAnalysis(_lexicalAnalyzer);
 	}
-	logDebugging(_logger, "Compilation status: %s.", _compilationStatusAsString(status));
-	logDebugging(_logger, "Parsing is done.");
 	return status;
 }
 
